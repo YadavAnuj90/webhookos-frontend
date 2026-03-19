@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { auditApi } from '@/lib/api';
-import { Shield, RefreshCw, Filter, ChevronLeft, ChevronRight, User, Zap, Settings, Globe } from 'lucide-react';
+import { auditApi, auditExportApi } from '@/lib/api';
+import { Shield, RefreshCw, Filter, ChevronLeft, ChevronRight, User, Download, Calendar } from 'lucide-react';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 
 const ACTION_COLORS: any = {
   create: '#4ade80', delete: '#f87171', update: '#fbbf24',
@@ -9,12 +10,25 @@ const ACTION_COLORS: any = {
   pause: '#f59e0b', resume: '#4ade80', rotate: '#22d3ee', suspend: '#f87171',
 };
 
+// ── Date helpers ─────────────────────────────────────────────────────────────
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+function daysAgoStr(n: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function AdminAuditPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState({ action: '', resource: '' });
+  const [exportFrom, setExportFrom] = useState(daysAgoStr(30));
+  const [exportTo, setExportTo] = useState(todayStr());
+  const [exporting, setExporting] = useState(false);
   const limit = 25;
 
   const load = async () => {
@@ -31,14 +45,37 @@ export default function AdminAuditPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
+  const handleExport = async () => {
+    if (!exportFrom || !exportTo) return;
+    setExporting(true);
+    try {
+      // Attempt blob download via authenticated API call
+      const blob = await auditExportApi.exportBlob(exportFrom, exportTo);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-${exportFrom}_${exportTo}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Fallback: open URL directly (browser will handle auth via cookie/header)
+      window.open(auditExportApi.getUrl(exportFrom, exportTo), '_blank');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const S: any = {
     card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12 },
     select: { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 12px', fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text)', outline: 'none', cursor: 'pointer' },
+    dateInput: { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)', outline: 'none', colorScheme: 'dark', width: 130 },
   };
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#991b1b,#f87171)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Shield size={18} color="#fff" /></div>
         <div>
           <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, color: 'var(--text)', margin: 0 }}>System Audit Log</h1>
@@ -60,12 +97,45 @@ export default function AdminAuditPage() {
         </div>
       </div>
 
+      {/* ── CSV Export Bar ─────────────────────────────────────────────────── */}
+      <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <Calendar size={14} color="var(--text3)" />
+        <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginRight: 4 }}>Export CSV:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <label style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)' }}>From</label>
+          <input type="date" value={exportFrom} onChange={e => setExportFrom(e.target.value)} style={S.dateInput} max={exportTo} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <label style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)' }}>To</label>
+          <input type="date" value={exportTo} onChange={e => setExportTo(e.target.value)} style={S.dateInput} min={exportFrom} max={todayStr()} />
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', alignItems: 'center' }}>
+          {/* Quick presets */}
+          {[['7d', 7], ['30d', 30], ['90d', 90]].map(([label, days]) => (
+            <button key={label} onClick={() => { setExportFrom(daysAgoStr(days as number)); setExportTo(todayStr()); }}
+              style={{ fontFamily: 'var(--font-mono)', fontSize: 10, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text3)', cursor: 'pointer' }}>
+              {label}
+            </button>
+          ))}
+          <button
+            onClick={handleExport}
+            disabled={exporting || !exportFrom || !exportTo}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: 'none', background: exporting ? 'var(--bg3)' : 'linear-gradient(135deg,#991b1b,#f87171)', color: exporting ? 'var(--text3)' : '#fff', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, cursor: exporting ? 'not-allowed' : 'pointer', opacity: (!exportFrom || !exportTo) ? 0.5 : 1, transition: 'opacity .15s' }}
+          >
+            {exporting
+              ? <><div style={{ width: 12, height: 12, border: '2px solid var(--border)', borderTopColor: 'var(--text3)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />Exporting…</>
+              : <><Download size={13} />Export CSV</>
+            }
+          </button>
+        </div>
+      </div>
+
       <div style={S.card}>
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center' }}>
-            <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: '#f87171', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)' }}>Loading audit logs...</div>
-          </div>
+          <table className="tbl">
+            <thead><tr>{['Time','User','Action','Resource','Details','IP'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+            <SkeletonTable rows={8} cols={6} />
+          </table>
         ) : (
           <>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { usersApi } from '@/lib/api';
 import { Users, Shield, Ban, CheckCircle, ChevronLeft, ChevronRight, Search, RefreshCw } from 'lucide-react';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 
 const ROLE_COLORS: any = { super_admin: '#f87171', admin: '#f59e0b', user: '#4ade80' };
 
@@ -88,10 +89,10 @@ export default function AdminUsersPage() {
 
       <div style={S.card}>
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center' }}>
-            <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: '#f87171', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)' }}>Loading users...</div>
-          </div>
+          <table className="tbl">
+            <thead><tr>{['User','Email','Role','Plan','Status','Joined','Actions'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+            <SkeletonTable rows={8} cols={7} />
+          </table>
         ) : (
           <>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>

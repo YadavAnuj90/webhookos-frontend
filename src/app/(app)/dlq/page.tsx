@@ -2,27 +2,47 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi } from '@/lib/api';
-import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, RotateCcw, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import Empty from '@/components/ui/Empty';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import AiDebuggerModal from '@/components/ai/AiDebuggerModal';
+import DlqTriageReport from '@/components/ai/DlqTriageReport';
 
 const PID = 'default';
 
 export default function DlqPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
+  const [showAiDebug, setShowAiDebug] = useState(false);
+  const [showTriage, setShowTriage] = useState(false);
   const { data, isLoading } = useQuery({ queryKey:['dlq',page], queryFn:()=>eventsApi.getDlq(PID,{page,limit:20}), refetchInterval:30000 });
 
   const replay = useMutation({ mutationFn:(id:string)=>eventsApi.replay(PID,id), onSuccess:()=>{ toast.success('Queued for replay'); qc.invalidateQueries({queryKey:['dlq']}); } });
   const replayAll = useMutation({ mutationFn:()=>eventsApi.replayDlq(PID), onSuccess:(d:any)=>{ toast.success(d.message||'All events queued'); qc.invalidateQueries({queryKey:['dlq']}); } });
 
   return (
+    <>
     <div className="page">
       <div className="ph">
         <div className="ph-left"><h1>Dead Letter Queue</h1><p>// Events that exhausted all {5} retry attempts</p></div>
         <div style={{ display:'flex', gap:8 }}>
           <button className="btn btn-ghost" onClick={()=>qc.invalidateQueries({queryKey:['dlq']})}><RefreshCw size={12}/></button>
+          <button
+            className="btn"
+            onClick={()=>setShowTriage(v=>!v)}
+            style={{ background: showTriage ? 'linear-gradient(135deg,#6d28d9,#a855f7)' : 'rgba(168,85,247,.12)', color: showTriage ? '#fff' : '#a855f7', border: '1px solid rgba(168,85,247,.35)', fontWeight: 600 }}
+          >
+            <Sparkles size={12}/>✨ AI Triage
+          </button>
+          <button
+            className="btn"
+            onClick={()=>setShowAiDebug(true)}
+            style={{ background: 'linear-gradient(135deg,#6d28d9,#a855f7)', color: '#fff', border: 'none', fontWeight: 600 }}
+          >
+            <Sparkles size={12}/>✨ AI Debug
+          </button>
           {data?.total > 0 && (
             <button className="btn btn-danger" onClick={()=>{ if(confirm(`Replay all ${data.total} DLQ events?`)) replayAll.mutate(); }} disabled={replayAll.isPending}>
               <RotateCcw size={12}/>Replay All ({data.total})
@@ -30,6 +50,8 @@ export default function DlqPage() {
           )}
         </div>
       </div>
+
+      {showTriage && <DlqTriageReport />}
 
       {data?.total > 0 && (
         <div className="alert alert-red" style={{ marginBottom:20 }}>
@@ -39,7 +61,7 @@ export default function DlqPage() {
       )}
 
       <div className="tbl-wrap">
-        {isLoading ? <div style={{ padding:32,textAlign:'center' }}><div className="spin" style={{ margin:'0 auto' }}/></div>
+        {isLoading ? <table className="tbl"><thead><tr><th>Event Type</th><th>Endpoint</th><th>Last Error</th><th>Retries</th><th>Dead At</th><th>Action</th></tr></thead><SkeletonTable rows={6} cols={6} /></table>
         : !data?.events?.length
           ? <Empty title="Dead Letter Queue is empty" sub="All events are being delivered successfully. Great job!" />
           : (
@@ -82,5 +104,7 @@ export default function DlqPage() {
         )}
       </div>
     </div>
+    {showAiDebug && <AiDebuggerModal onClose={()=>setShowAiDebug(false)} />}
+    </>
   );
 }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { alertsApi } from '@/lib/api';
 import { BellRing, Plus, Trash2, ToggleLeft, ToggleRight, Send, Mail, Slack, Webhook, AlertTriangle, CheckCircle } from 'lucide-react';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 
 const CHANNEL_ICONS: any = { email: Mail, slack: Slack, webhook: Webhook };
 const CONDITION_LABELS: any = { consecutive_failures: 'Consecutive Failures', failure_rate: 'Failure Rate %', latency_spike: 'Latency Spike (ms)', all_failures: 'Any Failure' };
@@ -11,10 +12,11 @@ export default function AlertsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editRule, setEditRule] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [testing, setTesting] = useState('');
   const [form, setForm] = useState({ name: '', conditionType: 'consecutive_failures', threshold: 3, channel: 'email', channelTarget: '', cooldownSeconds: 300 });
 
-  const load = async () => { try { const d = await alertsApi.list(); setRules(Array.isArray(d) ? d : []); } catch {} };
+  const load = async () => { try { const d = await alertsApi.list(); setRules(Array.isArray(d) ? d : []); } catch {} finally { setFetching(false); } };
   useEffect(() => { load(); }, []);
 
   const save = async () => {
@@ -79,7 +81,11 @@ export default function AlertsPage() {
 
       {/* Rules list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {rules.length === 0 ? (
+        {fetching ? (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:12 }}>
+            <SkeletonCard /><SkeletonCard /><SkeletonCard />
+          </div>
+        ) : rules.length === 0 ? (
           <div style={{ ...S.card, padding: 48, textAlign: 'center' }}>
             <BellRing size={32} color="var(--text3)" style={{ opacity: 0.3, marginBottom: 12 }} />
             <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text3)' }}>No alert rules configured</div>

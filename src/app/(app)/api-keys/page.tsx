@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { apiKeysApi } from '@/lib/api';
 import { Key, Plus, Copy, Check, Trash2, Ban, Clock, Activity, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 
 export default function ApiKeysPage() {
   const [keys, setKeys] = useState<any[]>([]);
@@ -10,10 +11,12 @@ export default function ApiKeysPage() {
   const [newKey, setNewKey] = useState<any>(null);
   const [copied, setCopied] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [form, setForm] = useState({ name: '', description: '', expiresAt: '', scopes: ['read', 'write'] });
 
   const load = async () => {
     try { const [k, s] = await Promise.all([apiKeysApi.list(), apiKeysApi.stats()]); setKeys(Array.isArray(k) ? k : []); setStats(s); } catch {}
+    finally { setFetching(false); }
   };
   useEffect(() => { load(); }, []);
 
@@ -90,7 +93,12 @@ export default function ApiKeysPage() {
 
       {/* Keys table */}
       <div style={S.card}>
-        {keys.length === 0 ? (
+        {fetching ? (
+          <table className="tbl">
+            <thead><tr>{['Name','Key','Scopes','Last Used','Expires','Usage','Status',''].map(h => <th key={h}>{h}</th>)}</tr></thead>
+            <SkeletonTable rows={5} cols={8} />
+          </table>
+        ) : keys.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center' }}>
             <Key size={32} color="var(--text3)" style={{ opacity: 0.3, marginBottom: 12 }} />
             <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text3)' }}>No API keys yet</div>

@@ -1,5 +1,6 @@
 # ─────────────────────────────────────────────
-#  Next.js / TypeScript  —  .gitignore
+#  WebhookOS Frontend  —  .gitignore
+#  Stack: Next.js 14 · TypeScript · Tailwind
 # ─────────────────────────────────────────────
 
 # ── Dependencies ──────────────────────────────
@@ -24,6 +25,8 @@ dist/
 .env.production
 .env.production.local
 .env*.local
+# Commit .env.example (no secrets) so devs know what vars are needed
+!.env.example
 
 # ── Debug / Logs ──────────────────────────────
 npm-debug.log*
@@ -32,6 +35,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 *.log
+logs/
 
 # ── Testing & Coverage ────────────────────────
 coverage/
@@ -42,6 +46,7 @@ coverage/
 
 # ── TypeScript ────────────────────────────────
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 next-env.d.ts
 
 # ── OS generated files ────────────────────────
@@ -57,6 +62,7 @@ desktop.ini
 # ── Editor / IDE ──────────────────────────────
 .vscode/
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 *.suo
 *.ntvs*
@@ -65,21 +71,31 @@ desktop.ini
 *.sw?
 *.swp
 *.swo
-.editorconfig
 
 # ── Deployment platforms ──────────────────────
 .vercel/
 .netlify/
 .turbo/
 
-# ── Package manager locks (keep one, ignore rest) ─
-# Uncomment whichever you DON'T use:
-# package-lock.json   # if using yarn/pnpm
-# yarn.lock           # if using npm/pnpm
-# pnpm-lock.yaml      # if using npm/yarn
+# ── Package manager ───────────────────────────
+# Project uses npm — keep package-lock.json, ignore others
+yarn.lock
+pnpm-lock.yaml
+.pnpm-store/
+
+# ── Razorpay / Payment keys ───────────────────
+# NEXT_PUBLIC_RAZORPAY_KEY_ID goes in .env — never commit
+*.key
+*.secret
+
+# ── Local dev / backup folders ────────────────
+whk-frontend-clean/
+*.backup
+*.bak
 
 # ── Misc ──────────────────────────────────────
 *.pem
 .cache/
 tmp/
 temp/
+.temp/

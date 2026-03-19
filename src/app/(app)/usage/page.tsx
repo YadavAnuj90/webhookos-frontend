@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { usageApi } from '@/lib/api';
-import { BarChart2, Zap, CheckCircle, XCircle, Clock, TrendingUp, ArrowUpRight, CreditCard } from 'lucide-react';
+import { BarChart2, Zap, CheckCircle, XCircle, Clock, TrendingUp, ArrowUpRight, CreditCard, AlertTriangle } from 'lucide-react';
+import { SkeletonCard, SkeletonText } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 
 const PERIODS = [{ label: '24h', val: 'day' }, { label: '7d', val: 'week' }, { label: '30d', val: 'month' }];
@@ -57,9 +58,44 @@ export default function UsagePage() {
         </div>
       </div>
 
+      {/* Overage banner */}
+      {(data?.overage?.events > 0) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 18px', background: 'rgba(248,113,113,.08)', border: '1px solid rgba(248,113,113,.25)', borderRadius: 11, marginBottom: 20 }}>
+          <AlertTriangle size={16} color="#f87171" style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: '#f87171' }}>Overage detected — </span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text2)' }}>
+              You've used <strong>{data.overage.events.toLocaleString()}</strong> extra events this month.
+              Estimated additional cost:{' '}
+              <strong style={{ color: '#f87171' }}>${data.overage.estimatedCost.toFixed(2)} {data.overage.currency}</strong>
+            </span>
+          </div>
+          <Link href="/billing" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, background: '#f87171', color: '#fff', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <CreditCard size={12} />Upgrade Plan
+          </Link>
+        </div>
+      )}
+
+      {/* Bandwidth row */}
+      {(data?.bandwidth?.bytes > 0) && (
+        <div style={{ display: 'flex', gap: 14, marginBottom: 18 }}>
+          {[
+            { label: 'Bandwidth Used', val: data.bandwidth.bytes > 1_048_576 ? `${(data.bandwidth.bytes / 1_048_576).toFixed(1)} MB` : `${(data.bandwidth.bytes / 1024).toFixed(0)} KB` },
+            { label: 'HTTP Requests',  val: data.bandwidth.requests?.toLocaleString() || '—' },
+          ].map(s => (
+            <div key={s.label} style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 18px', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{s.val}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Summary stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
-        {[
+        {loading ? (
+          <>{[0,1,2,3].map(i => <SkeletonCard key={i} />)}</>
+        ) : [
           { label: 'Total Events', val: data?.totals?.total || 0, icon: Zap, color: '#6366f1', change: null },
           { label: 'Delivered', val: data?.totals?.delivered || 0, icon: CheckCircle, color: '#4ade80', change: null },
           { label: 'Failed', val: data?.totals?.failed || 0, icon: XCircle, color: '#f87171', change: null },

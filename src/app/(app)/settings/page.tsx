@@ -1,14 +1,21 @@
 'use client';
 import { useState } from 'react';
-import { Settings, Globe, Lock, Bell, Code, Trash2, Save, Check } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { gdprApi, endpointsApi } from '@/lib/api';
+import { Settings, Globe, Lock, Bell, Code, Trash2, Save, Check, ShieldCheck, X, AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
+import PiiDetectorModal from '@/components/ai/PiiDetectorModal';
 
 const TABS = [
-  { id: 'general', label: 'General', icon: Globe },
-  { id: 'security', label: 'Security', icon: Lock },
+  { id: 'general',    label: 'General',        icon: Globe },
+  { id: 'security',   label: 'Security',        icon: Lock },
+  { id: 'compliance', label: 'Compliance',      icon: ShieldCheck },
   { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'developer', label: 'Developer', icon: Code },
-  { id: 'danger', label: 'Danger Zone', icon: Trash2 },
+  { id: 'developer',  label: 'Developer',       icon: Code },
+  { id: 'danger',     label: 'Danger Zone',     icon: Trash2 },
 ];
+
+const PID = 'default';
 
 const S: any = {
   card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '24px 28px', marginBottom: 16 },
@@ -36,10 +43,35 @@ export default function SettingsPage() {
   const [notifs, setNotifs] = useState({ emailOnFailure: true, emailOnRecovery: true, slackOnFailure: false, weeklyDigest: true, browserNotifications: false });
   const [dev, setDev] = useState({ logLevel: 'info', retentionDays: '30', signatureHeader: 'X-Webhook-Signature', maxPayloadKb: '256' });
 
+  // GDPR
+  const [customerId, setCustomerId] = useState('');
+  const [eraseConfirm, setEraseConfirm] = useState(false);
+  const [eraseResult, setEraseResult] = useState<{ deletedEvents: number; deletedLogs: number } | null>(null);
+  const [piiEndpoints, setPiiEndpoints] = useState<any[]>([]);
+  const [showPiiDetector, setShowPiiDetector] = useState(false);
+
+  const eraseMut = useMutation({
+    mutationFn: (id: string) => gdprApi.erase(PID, id),
+    onSuccess: (d: any) => {
+      setEraseResult(d);
+      setEraseConfirm(false);
+      toast.success(`Erased ${d.deletedEvents} events and ${d.deletedLogs} delivery logs`);
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Erasure failed'),
+  });
+
+  // Load PII endpoints for summary
+  const loadPiiEndpoints = async () => {
+    try {
+      const r = await endpointsApi.list(PID, { limit: 100 });
+      setPiiEndpoints((r?.endpoints || []).filter((ep: any) => ep.piiFields?.length > 0));
+    } catch {}
+  };
+
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
 
   return (
-    <div>
+    <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
         <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#374151,#6b7280)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Settings size={18} color="#fff" /></div>
         <div>
@@ -144,6 +176,105 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {tab === 'compliance' && (
+            <div>
+              {/* Payload Encryption */}
+              <div style={{ ...S.card, marginBottom: 16 }}>
+                <h2 style={S.sectionTitle}>Payload Encryption at Rest</h2>
+                <p style={S.sectionDesc}>AES-256-GCM encryption for all stored webhook payloads</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 9, background: 'rgba(74,222,128,.05)', border: '1px solid rgba(74,222,128,.15)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--text3)' }} />
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'var(--text3)' }}>Status: Disabled</span>
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', padding: '2px 8px', borderRadius: 5, background: 'var(--bg3)', border: '1px solid var(--border)' }}>Env-var driven</span>
+                </div>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginTop: 12, lineHeight: 1.6 }}>
+                  When enabled, all webhook payloads are encrypted in the database using AES-256-GCM. Contact your admin to set <code style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'rgba(99,102,241,.1)', padding: '1px 5px', borderRadius: 4, color: 'var(--accent2)' }}>PAYLOAD_ENCRYPTION_KEY</code> environment variable.
+                </p>
+              </div>
+
+              {/* GDPR Erasure */}
+              <div style={{ ...S.card, marginBottom: 16 }}>
+                <h2 style={S.sectionTitle}>GDPR Right-to-Erasure</h2>
+                <p style={S.sectionDesc}>Permanently delete all events and delivery logs containing a specific customer ID</p>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={S.label}>Customer ID</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input value={customerId} onChange={e => { setCustomerId(e.target.value); setEraseResult(null); }}
+                      placeholder="cus_abc123" style={{ ...S.input, flex: 1 }} />
+                    <button
+                      onClick={() => { if (!customerId.trim()) { toast.error('Enter a customer ID'); return; } setEraseConfirm(true); }}
+                      disabled={!customerId.trim() || eraseMut.isPending}
+                      style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid rgba(248,113,113,.4)', background: 'rgba(248,113,113,.1)', color: '#f87171', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', opacity: !customerId.trim() ? 0.5 : 1 }}>
+                      Erase Data
+                    </button>
+                  </div>
+                </div>
+                {eraseResult && (
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(74,222,128,.07)', border: '1px solid rgba(74,222,128,.2)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Check size={14} color="#4ade80" />
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: '#4ade80' }}>Erasure complete</span>
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                      {eraseResult.deletedEvents} events · {eraseResult.deletedLogs} delivery logs deleted
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* AI PII Detector */}
+              <div style={{ ...S.card, marginBottom: 16, background: 'rgba(168,85,247,.05)', border: '1px solid rgba(168,85,247,.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#6d28d9,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Sparkles size={14} color="#fff" />
+                  </div>
+                  <div>
+                    <h2 style={{ ...S.sectionTitle, marginBottom: 1, color: '#c084fc' }}>AI PII Auto-Detector</h2>
+                    <p style={{ ...S.sectionDesc, marginBottom: 0 }}>Scan any payload to automatically discover personally identifiable information fields</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowPiiDetector(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', borderRadius: 9, background: 'linear-gradient(135deg,#6d28d9,#a855f7)', border: 'none', color: '#fff', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  <Sparkles size={13} />✨ Open PII Scanner
+                </button>
+              </div>
+
+              {/* PII Scrubbing Summary */}
+              <div style={S.card}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div>
+                    <h2 style={{ ...S.sectionTitle, marginBottom: 2 }}>PII Scrubbing Summary</h2>
+                    <p style={{ ...S.sectionDesc, marginBottom: 0 }}>Endpoints configured to redact PII fields before delivery</p>
+                  </div>
+                  <button onClick={loadPiiEndpoints} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text3)', fontFamily: 'var(--font-body)', fontSize: 12, cursor: 'pointer' }}>Refresh</button>
+                </div>
+                {piiEndpoints.length === 0 ? (
+                  <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text3)', fontFamily: 'var(--font-body)', fontSize: 13 }}>
+                    Click Refresh to load — or no endpoints have PII scrubbing configured.
+                  </div>
+                ) : piiEndpoints.map((ep: any) => (
+                  <div key={ep._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{ep.name}</div>
+                      <div style={{ display: 'flex', gap: 5, marginTop: 4, flexWrap: 'wrap' }}>
+                        {ep.piiFields.map((f: string) => (
+                          <code key={f} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, padding: '1px 6px', borderRadius: 4, background: 'rgba(168,85,247,.1)', color: '#a78bfa', border: '1px solid rgba(168,85,247,.2)' }}>{f}</code>
+                        ))}
+                      </div>
+                    </div>
+                    <a href={`/endpoints/${ep._id}`} style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--accent2)', textDecoration: 'none' }}>
+                      <ExternalLink size={12} />Edit
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {tab === 'danger' && (
             <div style={{ ...S.card, borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.03)' }}>
               <h2 style={{ ...S.sectionTitle, color: '#f87171' }}>Danger Zone</h2>
@@ -165,6 +296,29 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
-    </div>
+
+    {/* GDPR erasure confirmation modal */}
+    {eraseConfirm && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: 'var(--bg2)', border: '1px solid rgba(248,113,113,.3)', borderRadius: 14, width: 460, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,.5)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <AlertTriangle size={20} color="#f87171" />
+            <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 17, fontWeight: 700, color: '#f87171', margin: 0 }}>Confirm Data Erasure</h2>
+          </div>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text2)', lineHeight: 1.65, marginBottom: 20 }}>
+            This will permanently delete <strong>all events and delivery logs</strong> containing customer ID <code style={{ fontFamily: 'var(--font-mono)', fontSize: 12, background: 'rgba(248,113,113,.1)', padding: '1px 6px', borderRadius: 4, color: '#f87171' }}>{customerId}</code>. This cannot be undone.
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button onClick={() => setEraseConfirm(false)} style={{ padding: '9px 20px', borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text2)', fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+            <button onClick={() => eraseMut.mutate(customerId)} disabled={eraseMut.isPending}
+              style={{ padding: '9px 20px', borderRadius: 8, background: '#f87171', border: 'none', color: '#fff', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: eraseMut.isPending ? 0.7 : 1 }}>
+              {eraseMut.isPending ? 'Erasing…' : 'Yes, Erase All Data'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    {showPiiDetector && <PiiDetectorModal onClose={() => setShowPiiDetector(false)} />}
+    </>
   );
 }

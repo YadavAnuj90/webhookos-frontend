@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { workspacesApi } from '@/lib/api';
 import { Building2, Plus, Users, Mail, Trash2, Crown, Shield, Code, Eye, Send, Copy, Check } from 'lucide-react';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 
 const ROLE_ICONS: any = { owner: Crown, admin: Shield, developer: Code, viewer: Eye };
 const ROLE_COLORS: any = { owner: '#f59e0b', admin: '#f87171', developer: '#60a5fa', viewer: '#94a3b8' };
@@ -13,6 +14,7 @@ export default function WorkspacePage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [inviteResult, setInviteResult] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', description: '' });
@@ -20,6 +22,7 @@ export default function WorkspacePage() {
 
   const load = async () => {
     try { const d = await workspacesApi.list(); const arr = Array.isArray(d) ? d : []; setWorkspaces(arr); if (arr[0] && !selected) { setSelected(arr[0]); loadInvites(arr[0]._id); } } catch {}
+    finally { setFetching(false); }
   };
   const loadInvites = async (id: string) => { try { const d = await workspacesApi.listInvites(id); setInvites(Array.isArray(d) ? d : []); } catch {} };
   useEffect(() => { load(); }, []);
@@ -65,7 +68,9 @@ export default function WorkspacePage() {
       <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20 }}>
         {/* Workspace list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {workspaces.length === 0 ? (
+          {fetching ? (
+            <><SkeletonCard /><SkeletonCard /></>
+          ) : workspaces.length === 0 ? (
             <div style={{ ...S.card, padding: 24, textAlign: 'center', color: 'var(--text3)', fontFamily: 'var(--font-body)', fontSize: 13 }}>No workspaces yet</div>
           ) : workspaces.map(ws => (
             <div key={ws._id} onClick={() => { setSelected(ws); loadInvites(ws._id); }} style={{ ...S.card, padding: '14px 16px', cursor: 'pointer', border: selected?._id === ws._id ? '1px solid var(--accent2)' : '1px solid var(--border)', background: selected?._id === ws._id ? 'rgba(99,102,241,0.08)' : 'var(--bg2)' }}>

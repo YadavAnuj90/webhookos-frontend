@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi, usersApi } from '@/lib/api';
 import { useAuth } from '@/lib/store';
 import { User, Lock, Monitor, Key, Plus, Trash2, X, Eye, EyeOff, Copy } from 'lucide-react';
+import { SkeletonText } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -36,14 +37,14 @@ export default function ProfilePage() {
   };
 
   // Sessions
-  const { data: sessions } = useQuery({ queryKey:['sessions'], queryFn:()=>authApi.getSessions(), enabled:tab==='sessions' });
+  const { data: sessions, isLoading: sessionsLoading } = useQuery({ queryKey:['sessions'], queryFn:()=>authApi.getSessions(), enabled:tab==='sessions' });
   const logoutAll = useMutation({
     mutationFn: () => authApi.logoutAll(),
     onSuccess: () => { toast.success('All sessions ended'); qc.invalidateQueries({queryKey:['sessions']}); },
   });
 
   // API Keys
-  const { data: apiKeys, refetch: refetchKeys } = useQuery({ queryKey:['apikeys'], queryFn:()=>authApi.listApiKeys(), enabled:tab==='apikeys' });
+  const { data: apiKeys, isLoading: keysLoading, refetch: refetchKeys } = useQuery({ queryKey:['apikeys'], queryFn:()=>authApi.listApiKeys(), enabled:tab==='apikeys' });
   const [newKey, setNewKey] = useState<any>(null);
   const [keyForm, setKeyForm] = useState({ name:'', scopes:'read,write' });
   const [showKeyForm, setShowKeyForm] = useState(false);
@@ -137,7 +138,11 @@ export default function ProfilePage() {
                 <div style={{ fontWeight:700,fontSize:14 }}>Active Sessions</div>
                 <button className="btn btn-danger btn-sm" onClick={()=>logoutAll.mutate()} disabled={logoutAll.isPending}>End All Sessions</button>
               </div>
-              {sessions?.length ? sessions.map((s:any,i:number) => (
+              {sessionsLoading ? (
+                <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
+                  {[0,1,2].map(i => <div key={i} style={{ display:'flex',alignItems:'center',gap:12,padding:'12px',background:'var(--card2)',borderRadius:'var(--r2)',border:'1px solid var(--b1)' }}><SkeletonText width={36} height={36} style={{ borderRadius:8,flexShrink:0 }}/><div style={{ flex:1 }}><SkeletonText width="55%" height={12} style={{ marginBottom:6 }}/><SkeletonText width="70%" height={9} /></div></div>)}
+                </div>
+              ) : sessions?.length ? sessions.map((s:any,i:number) => (
                 <div key={i} style={{ display:'flex',alignItems:'center',gap:12,padding:'12px',background:'var(--card2)',borderRadius:'var(--r2)',border:'1px solid var(--b1)',marginBottom:8 }}>
                   <Monitor size={16} style={{ color:'var(--a2)',flexShrink:0 }}/>
                   <div style={{ flex:1 }}>
@@ -182,7 +187,11 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {apiKeys?.length ? apiKeys.map((k:any) => (
+              {keysLoading ? (
+                <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
+                  {[0,1,2].map(i => <div key={i} style={{ display:'flex',alignItems:'center',gap:12,padding:'11px 14px',background:'var(--card2)',borderRadius:'var(--r2)',border:'1px solid var(--b1)' }}><SkeletonText width={36} height={36} style={{ borderRadius:8,flexShrink:0 }}/><div style={{ flex:1 }}><SkeletonText width="40%" height={12} style={{ marginBottom:6 }}/><SkeletonText width="65%" height={9} /></div></div>)}
+                </div>
+              ) : apiKeys?.length ? apiKeys.map((k:any) => (
                 <div key={k._id} style={{ display:'flex',alignItems:'center',gap:12,padding:'11px 14px',background:'var(--card2)',borderRadius:'var(--r2)',border:'1px solid var(--b1)',marginBottom:8 }}>
                   <Key size={14} style={{ color:'var(--a2)',flexShrink:0 }}/>
                   <div style={{ flex:1 }}>

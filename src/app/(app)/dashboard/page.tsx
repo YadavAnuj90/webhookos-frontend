@@ -7,6 +7,8 @@ import { Zap, Globe, AlertTriangle, TrendingUp, ArrowRight, Activity, RefreshCw 
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { SkeletonTable } from '@/components/ui/Skeleton';
+import OnboardingBanner from '@/components/ui/OnboardingBanner';
 
 const PID = 'default';
 
@@ -15,7 +17,8 @@ export default function DashboardPage() {
   const { data: summary, isLoading: sl } = useQuery({ queryKey:['ds'], queryFn:()=>analyticsApi.summary(PID,{days:7}), refetchInterval:60000 });
   const { data: ts } = useQuery({ queryKey:['dt'], queryFn:()=>analyticsApi.timeSeries(PID,{granularity:'day'}), refetchInterval:60000 });
   const { data: eps } = useQuery({ queryKey:['de'], queryFn:()=>endpointsApi.list(PID,{limit:5}) });
-  const { data: evts, refetch: refetchEvts } = useQuery({ queryKey:['dv'], queryFn:()=>eventsApi.list(PID,{limit:8}), refetchInterval:30000 });
+  const { data: evts, isLoading: evtLoading, refetch: refetchEvts } = useQuery({ queryKey:['dv'], queryFn:()=>eventsApi.list(PID,{limit:8}), refetchInterval:30000 });
+  const { data: epsAll, isLoading: epsLoading } = useQuery({ queryKey:['dep'], queryFn:()=>endpointsApi.list(PID,{limit:5}) });
 
   const chart = (ts||[]).map((b:any) => ({
     t: b._id?.date ? new Date(b._id.date).toLocaleDateString('en',{month:'short',day:'numeric'}) : (b._id?.hour||''),
@@ -31,6 +34,9 @@ export default function DashboardPage() {
 
   return (
     <div className="page">
+      {/* Onboarding */}
+      <OnboardingBanner />
+
       {/* Header */}
       <div className="ph">
         <div className="ph-left">
@@ -108,7 +114,10 @@ export default function DashboardPage() {
               <Link href="/events" style={{ fontFamily:'var(--mono)',fontSize:9,color:'var(--a2)' }}>View all →</Link>
             </div>
           </div>
-          {evts?.events?.length ? (
+          {evtLoading ? (
+            <table className="tbl"><thead><tr><th>Type</th><th>Status</th><th>Time</th></tr></thead>
+              <SkeletonTable rows={5} cols={3} /></table>
+          ) : evts?.events?.length ? (
             <table className="tbl"><tbody>
               {evts.events.map((e:any) => (
                 <tr key={e._id}>

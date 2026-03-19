@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { auditApi } from '@/lib/api';
 import { FileText, Filter, User, Shield, Zap, Globe, Settings, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 
 const ACTION_COLORS: any = {
   create: '#4ade80', delete: '#f87171', update: '#fbbf24',
@@ -72,10 +73,10 @@ export default function HistoryPage() {
 
       <div style={S.card}>
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center' }}>
-            <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--accent2)', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto 12px' }} />
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)' }}>Loading history...</div>
-          </div>
+          <table className="tbl">
+            <thead><tr>{['Time','Action','Resource','Details','IP'].map(h => <th key={h}>{h}</th>)}</tr></thead>
+            <SkeletonTable rows={7} cols={5} />
+          </table>
         ) : logs.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center' }}>
             <FileText size={32} color="var(--text3)" style={{ opacity: 0.3, marginBottom: 12 }} />

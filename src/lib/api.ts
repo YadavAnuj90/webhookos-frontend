@@ -10,9 +10,26 @@ api.interceptors.request.use(cfg => {
   return cfg;
 });
 
+// 402 handler — set by the AppShell so it can use Next.js router + toast
+let _on402: ((code: string, msg: string) => void) | null = null;
+export function set402Handler(fn: (code: string, msg: string) => void) { _on402 = fn; }
+
 let refreshing = false;
 api.interceptors.response.use(r => r, async err => {
   const orig = err.config;
+
+  // ── 402 Payment Required ──────────────────────────────────────────────────
+  if (err.response?.status === 402) {
+    const { code, message } = err.response.data || {};
+    if (_on402) {
+      _on402(code || 'payment_required', message || 'Payment required');
+    } else if (typeof window !== 'undefined') {
+      window.location.href = `/billing?reason=${code || 'payment_required'}`;
+    }
+    return Promise.reject(err);
+  }
+
+  // ── 401 Token Refresh ────────────────────────────────────────────────────
   if (err.response?.status === 401 && !orig._retry && !refreshing) {
     orig._retry = true; refreshing = true;
     try {
@@ -43,6 +60,8 @@ export const authApi = {
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }).then(r => r.data),
   resetPassword: (token: string, password: string) => api.post('/auth/reset-password', { token, password }).then(r => r.data),
   changePassword: (d: any) => api.post('/auth/change-password', d).then(r => r.data),
+  verifyEmail: (token: string) => api.get('/auth/verify-email', { params: { token } }).then(r => r.data),
+  resendVerification: () => api.post('/auth/resend-verification').then(r => r.data),
   createApiKey: (d: any) => api.post('/auth/api-keys', d).then(r => r.data),
   listApiKeys: () => api.get('/auth/api-keys').then(r => r.data),
   revokeApiKey: (id: string) => api.delete(`/auth/api-keys/${id}`).then(r => r.data),
@@ -64,6 +83,7 @@ export const projectsApi = {
   get: (id: string) => api.get(`/projects/${id}`).then(r => r.data),
   update: (id: string, d: any) => api.put(`/projects/${id}`, d).then(r => r.data),
   delete: (id: string) => api.delete(`/projects/${id}`).then(r => r.data),
+  addMember: (id: string, d: any) => api.post(`/projects/${id}/members`, d).then(r => r.data),
 };
 
 export const endpointsApi = {
@@ -93,10 +113,38 @@ export const analyticsApi = {
 };
 
 export const billingApi = {
-  getPlans: () => api.get('/billing/plans').then(r => r.data),
-  createOrder: (planId: string) => api.post('/billing/order', { planId }).then(r => r.data),
-  verifyPayment: (d: any) => api.post('/billing/verify', d).then(r => r.data),
-  getSubscription: () => api.get('/billing/subscription').then(r => r.data),
+  // ── Subscription ───────────────────────────────────────────────────────────
+  getPlans:        ()             => api.get('/billing/plans').then(r => r.data),
+  getSubscription: ()             => api.get('/billing/subscription').then(r => r.data),
+  getTrial:        ()             => api.get('/billing/subscription/trial').then(r => r.data),
+  upgradeOrder:    (planId: string) => api.post('/billing/subscription/upgrade/order', { planId }).then(r => r.data),
+  upgradeVerify:   (d: any)       => api.post('/billing/subscription/upgrade/verify', d).then(r => r.data),
+  cancelSub:       (d?: any)      => api.post('/billing/subscription/cancel', d || {}).then(r => r.data),
+
+  // ── Credits ────────────────────────────────────────────────────────────────
+  getCreditsBalance:    ()        => api.get('/billing/credits/balance').then(r => r.data),
+  getCreditPackages:    ()        => api.get('/billing/credits/packages').then(r => r.data),
+  purchaseCreditsOrder: (packageId: string) => api.post('/billing/credits/purchase/order', { packageId }).then(r => r.data),
+  purchaseCreditsVerify:(d: any)  => api.post('/billing/credits/purchase/verify', d).then(r => r.data),
+  getTransactions:      (p?: any) => api.get('/billing/credits/transactions', { params: p }).then(r => r.data),
+  updateAutoTopUp:      (d: any)  => api.patch('/billing/credits/auto-topup', d).then(r => r.data),
+
+  // ── Invoices ───────────────────────────────────────────────────────────────
+  getInvoices: ()             => api.get('/billing/invoices').then(r => r.data),
+  getInvoice:  (id: string)   => api.get(`/billing/invoices/${id}`).then(r => r.data),
+
+  // ── Reseller ───────────────────────────────────────────────────────────────
+  getResellerProfile:    ()        => api.get('/billing/reseller/profile').then(r => r.data),
+  saveResellerProfile:   (d: any)  => api.post('/billing/reseller/profile', d).then(r => r.data),
+  getResellerCustomers:  ()        => api.get('/billing/reseller/customers').then(r => r.data),
+  addResellerCustomer:   (d: any)  => api.post('/billing/reseller/customers', d).then(r => r.data),
+  suspendCustomer:       (id: string) => api.post(`/billing/reseller/customers/${id}/suspend`).then(r => r.data),
+  reactivateCustomer:    (id: string) => api.post(`/billing/reseller/customers/${id}/reactivate`).then(r => r.data),
+  getCustomerInvoices:   (id: string) => api.get(`/billing/reseller/customers/${id}/invoices`).then(r => r.data),
+  generateInvoices:      ()        => api.post('/billing/reseller/invoices/generate').then(r => r.data),
+  getResellerRevenue:    ()        => api.get('/billing/reseller/revenue').then(r => r.data),
+  getResellerPlans:      ()        => api.get('/billing/reseller/plans').then(r => r.data),
+  createResellerPlan:    (d: any)  => api.post('/billing/reseller/plans', d).then(r => r.data),
 };
 
 export const auditApi = {
@@ -161,4 +209,113 @@ export const portalApi = {
 export const usageApi = {
   get: (period?: string) => api.get('/usage', { params: { period } }).then(r => r.data),
   summary: () => api.get('/usage/summary').then(r => r.data),
+};
+
+// ── GROUP 1: Event Type Catalog ──────────────────────────────────────────────
+export const eventTypesApi = {
+  list:     (pid: string)                        => api.get(`/projects/${pid}/event-types`).then(r => r.data),
+  get:      (pid: string, id: string)            => api.get(`/projects/${pid}/event-types/${id}`).then(r => r.data),
+  create:   (pid: string, d: any)                => api.post(`/projects/${pid}/event-types`, d).then(r => r.data),
+  update:   (pid: string, id: string, d: any)    => api.put(`/projects/${pid}/event-types/${id}`, d).then(r => r.data),
+  delete:   (pid: string, id: string)            => api.delete(`/projects/${pid}/event-types/${id}`).then(r => r.data),
+  validate: (pid: string, d: { eventTypeId: string; payload: object }) =>
+    api.post(`/projects/${pid}/event-types/validate`, d).then(r => r.data),
+};
+
+// ── GROUP 2: Operational Webhooks ────────────────────────────────────────────
+export const operationalWebhooksApi = {
+  list:         (pid: string)                     => api.get(`/projects/${pid}/operational-webhooks`).then(r => r.data),
+  create:       (pid: string, d: any)             => api.post(`/projects/${pid}/operational-webhooks`, d).then(r => r.data),
+  update:       (pid: string, id: string, d: any) => api.put(`/projects/${pid}/operational-webhooks/${id}`, d).then(r => r.data),
+  delete:       (pid: string, id: string)         => api.delete(`/projects/${pid}/operational-webhooks/${id}`).then(r => r.data),
+  rotateSecret: (pid: string, id: string)         => api.post(`/projects/${pid}/operational-webhooks/${id}/rotate-secret`).then(r => r.data),
+  test:         (pid: string, id: string)         => api.post(`/projects/${pid}/operational-webhooks/${id}/test`, {}).then(r => r.data),
+};
+
+// ── GROUP 3: Dev Tunnel ──────────────────────────────────────────────────────
+export const tunnelApi = {
+  create: ()                  => api.post('/tunnel/create', {}).then(r => r.data),
+  status: (tunnelId: string)  => api.get(`/tunnel/status/${tunnelId}`).then(r => r.data),
+};
+
+// ── GROUP 4: Portal Branding ─────────────────────────────────────────────────
+export const portalBrandingApi = {
+  updateBranding: (id: string, d: any) => api.patch(`/portal/tokens/${id}/branding`, d).then(r => r.data),
+  getByDomain:    (domain: string)     => api.get(`/portal/domain/${domain}`).then(r => r.data),
+};
+
+// ── GROUP 5: Metrics ─────────────────────────────────────────────────────────
+export const metricsApi = {
+  getUrl: () => `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}/metrics`,
+  // Uses axios so the Bearer token interceptor fires automatically
+  get: () => api.get('/metrics', { responseType: 'text' }).then(r => r.data as string),
+};
+
+// ── NEW GROUP 6: GDPR Erasure ─────────────────────────────────────────────────
+export const gdprApi = {
+  erase: (pid: string, customerId: string) =>
+    api.delete(`/projects/${pid}/events/erase`, { params: { customerId } }).then(r => r.data),
+};
+
+// ── NEW GROUP 7: Contract Testing (NO auth required) ──────────────────────────
+export const contractTestApi = {
+  // Uses plain fetch (no auth) — safe for CI/CD
+  run: (pid: string, name: string, body: { payload: object; version?: string }) =>
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}/projects/${pid}/event-types/${name}/contract-test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(async res => {
+      const data = await res.json();
+      if (!res.ok && res.status !== 422) throw new Error(data?.message || `HTTP ${res.status}`);
+      return { ...data, status: res.status };
+    }),
+};
+
+// ── NEW GROUP 8: Webhook Simulator ────────────────────────────────────────────
+export const simulateApi = {
+  run: (pid: string, id: string, d: { overrides?: Record<string, any>; endpointId?: string }) =>
+    api.post(`/projects/${pid}/event-types/${id}/simulate`, d).then(r => r.data),
+};
+
+// ── NEW GROUP 9: Delivery Heatmap ─────────────────────────────────────────────
+export const heatmapApi = {
+  get: (pid: string) => api.get(`/projects/${pid}/analytics/heatmap`).then(r => r.data),
+};
+
+// ── NEW GROUP 10: Audit Log CSV Export ────────────────────────────────────────
+export const auditExportApi = {
+  getUrl: (from: string, to: string) => {
+    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+    return `${base}/audit/export?from=${from}&to=${to}`;
+  },
+  exportBlob: (from: string, to: string) =>
+    api.get('/audit/export', { params: { from, to }, responseType: 'blob' }).then(r => r.data),
+};
+
+// ── NEW GROUP 11: Portal Token Subscriptions ──────────────────────────────────
+export const portalSubscriptionsApi = {
+  update: (id: string, subscribedEventTypes: string[]) =>
+    api.patch(`/portal/tokens/${id}/subscriptions`, { subscribedEventTypes }).then(r => r.data),
+};
+
+// ── NEW GROUP 12: AI Features (Gemini-powered) ────────────────────────────────
+export const aiApi = {
+  debug: (pid: string, body: { question: string; endpointId?: string; eventType?: string; hours?: number }) =>
+    api.post(`/ai/projects/${pid}/debug`, body).then(r => r.data),
+
+  generateSchema: (pid: string, body: { payload: object; eventTypeName?: string; autoSave?: boolean }) =>
+    api.post(`/ai/projects/${pid}/generate-schema`, body).then(r => r.data),
+
+  triageDlq: (pid: string) =>
+    api.post(`/ai/projects/${pid}/triage-dlq`).then(r => r.data),
+
+  detectPiiStandalone: (payload: object) =>
+    api.post('/ai/detect-pii', { payload }).then(r => r.data),
+
+  detectPiiForEndpoint: (pid: string, endpointId: string, body: { payload: object; autoApply?: boolean }) =>
+    api.post(`/ai/projects/${pid}/endpoints/${endpointId}/detect-pii`, body).then(r => r.data),
+
+  status: () =>
+    api.get('/ai/status').then(r => r.data),
 };

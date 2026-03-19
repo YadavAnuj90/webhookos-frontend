@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { transformationsApi } from '@/lib/api';
 import { Shuffle, Plus, Trash2, Play, ChevronDown, GripVertical, Eye } from 'lucide-react';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 
 const TYPE_LABELS: any = { remove_fields: 'Remove Fields', rename_keys: 'Rename Keys', add_fields: 'Add Fields', filter: 'Filter Events', custom_js: 'Template Substitution' };
 const TYPE_COLORS: any = { remove_fields: '#f87171', rename_keys: '#fbbf24', add_fields: '#4ade80', filter: '#60a5fa', custom_js: '#a78bfa' };
@@ -13,10 +14,11 @@ export default function TransformationsPage() {
   const [previewInput, setPreviewInput] = useState('{\n  "event": "user.created",\n  "userId": "123",\n  "email": "user@example.com",\n  "password": "secret",\n  "internalId": "int_456"\n}');
   const [previewOutput, setPreviewOutput] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [form, setForm] = useState({ name: '', description: '', type: 'remove_fields', config: {} as any });
   const [configStr, setConfigStr] = useState('{\n  "fields": ["password", "internalId"]\n}');
 
-  const load = async () => { try { const d = await transformationsApi.list(); setTransforms(Array.isArray(d) ? d : []); } catch {} };
+  const load = async () => { try { const d = await transformationsApi.list(); setTransforms(Array.isArray(d) ? d : []); } catch {} finally { setFetching(false); } };
   useEffect(() => { load(); }, []);
 
   const preview = async (t: any) => {
@@ -73,7 +75,9 @@ export default function TransformationsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
         {/* Transformations list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {transforms.length === 0 ? (
+          {fetching ? (
+            <><SkeletonCard /><SkeletonCard /><SkeletonCard /></>
+          ) : transforms.length === 0 ? (
             <div style={{ ...S.card, padding: 48, textAlign: 'center' }}>
               <Shuffle size={32} color="var(--text3)" style={{ opacity: 0.3, marginBottom: 12 }} />
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text3)' }}>No transformations yet</div>

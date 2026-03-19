@@ -3,13 +3,19 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore, useNotifStore } from '@/lib/store';
-import { searchApi, workspacesApi } from '@/lib/api';
+import { workspacesApi, set402Handler, billingApi } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { TrialInfo, Subscription } from '@/lib/types';
+import toast from 'react-hot-toast';
+import TrialBanner, { PlanBadge } from '@/components/billing/TrialBanner';
+import CommandPalette from '@/components/ui/CommandPalette';
 import {
   Activity, LayoutDashboard, Zap, Globe, BarChart3, AlertTriangle,
   CreditCard, Settings, User, Shield, Bell, Search, LogOut,
   ChevronRight, X, Check, Info, AlertCircle, Menu, Users, FileText,
   Key, BellRing, FlaskConical, Shuffle, ExternalLink, BarChart2,
   ChevronDown, Plus, Building2, CheckCheck, Sun, Moon,
+  Tag, Webhook, Radio, Gauge, Receipt, Coins, Store,
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -22,20 +28,29 @@ const NAV_GROUPS = [
     { href: '/history', icon: FileText, label: 'History' },
   ]},
   { label: 'DEVELOPER', items: [
-    { href: '/playground', icon: FlaskConical, label: 'Playground' },
-    { href: '/api-keys', icon: Key, label: 'API Keys' },
-    { href: '/transformations', icon: Shuffle, label: 'Transformations' },
+    { href: '/playground',            icon: FlaskConical, label: 'Playground' },
+    { href: '/api-keys',              icon: Key,          label: 'API Keys' },
+    { href: '/transformations',       icon: Shuffle,      label: 'Transformations' },
+    { href: '/event-types',           icon: Tag,          label: 'Event Types' },
+    { href: '/operational-webhooks',  icon: Webhook,      label: 'Op. Webhooks' },
+    { href: '/dev-tunnel',            icon: Radio,        label: 'Dev Tunnel' },
   ]},
   { label: 'MONITOR', items: [
-    { href: '/alerts', icon: BellRing, label: 'Alerts' },
-    { href: '/usage', icon: BarChart2, label: 'Usage' },
+    { href: '/alerts',  icon: BellRing,  label: 'Alerts' },
+    { href: '/usage',   icon: BarChart2, label: 'Usage' },
+    { href: '/metrics', icon: Gauge,     label: 'Metrics' },
   ]},
   { label: 'ACCOUNT', items: [
     { href: '/portal', icon: ExternalLink, label: 'Customer Portal' },
     { href: '/workspace', icon: Building2, label: 'Workspace' },
-    { href: '/billing', icon: CreditCard, label: 'Billing' },
     { href: '/settings', icon: Settings, label: 'Settings' },
   ]},
+];
+
+const BILLING_NAV = [
+  { href: '/billing',          icon: CreditCard, label: 'Overview'        },
+  { href: '/billing/credits',  icon: Coins,      label: 'Credits'         },
+  { href: '/billing/invoices', icon: Receipt,    label: 'Invoices'        },
 ];
 
 const ADMIN_NAV = [
@@ -88,12 +103,25 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed: (v: boolean) => void }) {
+function NavItem({ href, icon: Icon, label, collapsed, color }: { href: string; icon: any; label: string; collapsed: boolean; color?: string }) {
   const pathname = usePathname();
+  const active = pathname === href || (href !== '/billing' && pathname.startsWith(href + '/')) || (href === '/billing' && pathname === '/billing');
+  const ac = color || 'var(--accent2)';
+  return (
+    <Link href={href} style={{ textDecoration: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, marginBottom: 1, background: active ? (color ? `${color}18` : 'rgba(99,102,241,0.13)') : 'transparent', color: active ? ac : 'var(--text3)', borderLeft: active ? `2px solid ${ac}` : '2px solid transparent', transition: 'all 0.15s', cursor: 'pointer', overflow: 'hidden' }}>
+        <Icon size={15} style={{ flexShrink: 0, color: active ? ac : 'inherit' }} />
+        {!collapsed && <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}>{label}</span>}
+      </div>
+    </Link>
+  );
+}
+
+function Sidebar({ collapsed, setCollapsed, isReseller }: { collapsed: boolean; setCollapsed: (v: boolean) => void; isReseller: boolean }) {
   const { user } = useAuthStore();
   const isAdmin = ['admin', 'super_admin'].includes(user?.role || '');
   return (
-    <aside style={{ width: collapsed ? 64 : 224, minHeight: '100vh', background: 'var(--bg2)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', transition: 'width 0.25s ease', flexShrink: 0, position: 'sticky', top: 0 }}>
+    <aside style={{ width: collapsed ? 64 : 224, height: '100vh', background: 'var(--bg2)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', transition: 'width 0.25s ease', flexShrink: 0, overflowY: 'auto', overflowX: 'hidden' }}>
       <div style={{ padding: '14px 12px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 9, overflow: 'hidden' }}>
         <div style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}><img src="/logo.svg" alt="WebhookOS" width={34} height={34} style={{ display: 'block' }} /></div>
         {!collapsed && <div><div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14, color: 'var(--text)', whiteSpace: 'nowrap', letterSpacing: '-0.3px' }}>WebhookOS</div><div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', letterSpacing: '0.08em', marginTop: 1 }}>WEBHOOK DELIVERY</div></div>}
@@ -104,34 +132,30 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed
           <div key={group.label}>
             {!collapsed && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.15em', padding: '9px 10px 4px', opacity: 0.7 }}>{group.label}</div>}
             {collapsed && <div style={{ height: 6 }} />}
-            {group.items.map(({ href, icon: Icon, label }) => {
-              const active = pathname === href || pathname.startsWith(href + '/');
-              return (
-                <Link key={href} href={href} style={{ textDecoration: 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, marginBottom: 1, background: active ? 'rgba(99,102,241,0.13)' : 'transparent', color: active ? 'var(--accent3)' : 'var(--text3)', borderLeft: active ? '2px solid var(--accent2)' : '2px solid transparent', transition: 'all 0.15s', cursor: 'pointer', overflow: 'hidden' }}
-                    onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
-                    onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-                    <Icon size={15} style={{ flexShrink: 0, color: active ? 'var(--accent2)' : 'inherit' }} />
-                    {!collapsed && <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}>{label}</span>}
-                  </div>
-                </Link>
-              );
-            })}
+            {group.items.map(({ href, icon, label }) => (
+              <NavItem key={href} href={href} icon={icon} label={label} collapsed={collapsed} />
+            ))}
           </div>
         ))}
+
+        {/* Billing section */}
+        <div>
+          {!collapsed && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.15em', padding: '9px 10px 4px', opacity: 0.8 }}>BILLING</div>}
+          {collapsed && <div style={{ height: 6 }} />}
+          {BILLING_NAV.map(({ href, icon, label }) => (
+            <NavItem key={href} href={href} icon={icon} label={label} collapsed={collapsed} color="#4ade80" />
+          ))}
+          {isReseller && (
+            <NavItem href="/billing/reseller" icon={Store} label="Reseller Portal" collapsed={collapsed} color="#a855f7" />
+          )}
+        </div>
+
         {isAdmin && (
           <>
             {!collapsed && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.15em', padding: '9px 10px 4px', opacity: 0.8 }}>ADMIN</div>}
-            {ADMIN_NAV.map(({ href, icon: Icon, label }) => {
-              const active = pathname.startsWith(href);
-              return (
-                <Link key={href} href={href} style={{ textDecoration: 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, marginBottom: 1, background: active ? 'rgba(248,113,113,0.1)' : 'transparent', color: active ? '#f87171' : 'var(--text3)', borderLeft: active ? '2px solid #f87171' : '2px solid transparent', transition: 'all 0.15s', cursor: 'pointer' }}>
-                    <Icon size={15} style={{ flexShrink: 0 }} />{!collapsed && <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}>{label}</span>}
-                  </div>
-                </Link>
-              );
-            })}
+            {ADMIN_NAV.map(({ href, icon: Icon, label }) => (
+              <NavItem key={href} href={href} icon={Icon} label={label} collapsed={collapsed} color="#f87171" />
+            ))}
           </>
         )}
       </nav>
@@ -144,16 +168,21 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed
   );
 }
 
-function Topbar({ toggleMobile }: { toggleMobile: () => void }) {
+function Topbar({ toggleMobile, onOpenCmd }: { toggleMobile: () => void; onOpenCmd: () => void }) {
   const { user, logout } = useAuthStore();
   const { notifs, clearAll } = useNotifStore();
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUser, setShowUser] = useState(false);
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [searchFocused, setSearchFocused] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const router = useRouter();
+
+  const { data: sub } = useQuery<Subscription>({
+    queryKey: ['subscription'],
+    queryFn: () => billingApi.getSubscription(),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    throwOnError: false,
+  });
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
   const unread = notifs.filter((n: any) => !n.read).length;
@@ -172,10 +201,6 @@ function Topbar({ toggleMobile }: { toggleMobile: () => void }) {
     localStorage.setItem('theme', next);
   };
   useEffect(() => {
-    const t = setTimeout(async () => { if (query.length < 2) { setResults([]); return; } try { const d = await searchApi.search(query); setResults(d?.results || []); } catch { setResults([]); } }, 300);
-    return () => clearTimeout(t);
-  }, [query]);
-  useEffect(() => {
     const h = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifs(false);
       if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUser(false);
@@ -185,30 +210,17 @@ function Topbar({ toggleMobile }: { toggleMobile: () => void }) {
   const handleLogout = async () => { try { await logout(); } catch {} router.push('/auth/login'); };
   return (
     <header style={{ height: 54, background: 'var(--bg2)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0 }}>
-      <div style={{ flex: 1, maxWidth: 400, position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', border: `1px solid ${searchFocused ? 'var(--accent2)' : 'var(--border)'}`, borderRadius: 9, padding: '6px 12px', boxShadow: searchFocused ? '0 0 0 3px rgba(79,70,229,0.13)' : 'none', transition: 'border-color .15s, box-shadow .15s' }}>
-          <Search size={13} color={searchFocused ? 'var(--accent2)' : 'var(--text3)'} style={{ flexShrink: 0, transition: 'color .15s' }} />
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            placeholder="Search endpoints, events..."
-            style={{ background: 'transparent', border: 'none', outline: 'none', fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text)', width: '100%' }}
-          />
-          {query && <button onClick={() => { setQuery(''); setResults([]); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={11} color="var(--text3)" /></button>}
-          {!query && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', opacity: searchFocused ? 0 : 0.7, transition: 'opacity .15s', whiteSpace: 'nowrap' }}>⌘K</span>}
-        </div>
-        {results.length > 0 && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, marginTop: 4, zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', maxHeight: 280, overflowY: 'auto' }}>
-            {results.map((r: any, i: number) => (
-              <div key={i} style={{ padding: '8px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }} onClick={() => { setQuery(''); setResults([]); router.push(r.url || '/dashboard'); }}>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>{r.title}</div>
-                {r.subtitle && <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)' }}>{r.subtitle}</div>}
-              </div>
-            ))}
-          </div>
-        )}
+      <div style={{ flex: 1, maxWidth: 400 }}>
+        <button
+          onClick={onOpenCmd}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 9, padding: '6px 12px', cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent2)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px rgba(79,70,229,0.13)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+        >
+          <Search size={13} color="var(--text3)" style={{ flexShrink: 0 }} />
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', flex: 1, textAlign: 'left' }}>Search pages, endpoints, events...</span>
+          <kbd style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap', opacity: 0.7 }}>⌘K</kbd>
+        </button>
       </div>
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
         {/* Theme Toggle */}
@@ -250,16 +262,24 @@ function Topbar({ toggleMobile }: { toggleMobile: () => void }) {
             <ChevronDown size={11} color="var(--text3)" style={{ transform: showUser ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
           </button>
           {showUser && (
-            <div style={{ position: 'absolute', right: 0, top: '100%', width: 200, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200, marginTop: 6, overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', right: 0, top: '100%', width: 220, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200, marginTop: 6, overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{(user?.firstName ? user.firstName + ' ' + (user.lastName || '') : user?.email) || 'User'}</div>
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{user?.email}</div>
+                {sub && (
+                  <div style={{ marginTop: 7 }}>
+                    <PlanBadge status={sub.status} planName={sub.planName} daysLeft={sub.daysLeft} />
+                  </div>
+                )}
               </div>
               {[{ icon: User, label: 'Profile', href: '/profile' }, { icon: Settings, label: 'Settings', href: '/settings' }, { icon: Building2, label: 'Workspace', href: '/workspace' }].map(({ icon: Icon, label, href }) => (
                 <Link key={href} href={href} onClick={() => setShowUser(false)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', color: 'var(--text2)' }}>
                   <Icon size={13} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12 }}>{label}</span>
                 </Link>
               ))}
+              <Link href="/billing" onClick={() => setShowUser(false)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', color: '#4ade80' }}>
+                <CreditCard size={13} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600 }}>Manage Billing</span>
+              </Link>
               <div style={{ borderTop: '1px solid var(--border)' }}>
                 <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', background: 'none', border: 'none', cursor: 'pointer', color: '#f87171' }}>
                   <LogOut size={13} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12 }}>Sign Out</span>
@@ -276,15 +296,63 @@ function Topbar({ toggleMobile }: { toggleMobile: () => void }) {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const sidebarW = collapsed ? 64 : 224;
+  const router = useRouter();
+
+  // Fetch subscription to know if reseller
+  const { data: sub } = useQuery<Subscription>({
+    queryKey: ['subscription'],
+    queryFn: () => billingApi.getSubscription(),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    throwOnError: false,
+  });
+
+  const isReseller = sub?.features?.reseller === true;
+
+  // Wire up 402 handler once
+  useEffect(() => {
+    set402Handler((code, msg) => {
+      toast.error(msg || 'Payment required');
+      router.push(`/billing?reason=${code}`);
+    });
+  }, [router]);
+
+  // Global Cmd+K / Ctrl+K listener
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       {mobileOpen && <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40 }} />}
-      <div style={{ display: 'flex' }}>
-        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+
+      {/* Command Palette */}
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+
+      {/* Sidebar — fixed on left */}
+      <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50, width: sidebarW, transition: 'width 0.25s ease' }}>
+        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} isReseller={isReseller} />
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-        <Topbar toggleMobile={() => setMobileOpen(true)} />
-        <main style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>{children}</main>
+
+      {/* Content — offset by sidebar width, body scrolls */}
+      <div style={{ marginLeft: sidebarW, transition: 'margin-left 0.25s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        {/* Topbar — sticky at top */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+          <Topbar toggleMobile={() => setMobileOpen(true)} onOpenCmd={() => setCmdOpen(true)} />
+        </div>
+        {/* Trial Banner */}
+        <TrialBanner />
+        {/* Main — NO overflow, body scrolls */}
+        <main style={{ flex: 1, padding: '28px 32px' }}>{children}</main>
       </div>
     </div>
   );
