@@ -45,7 +45,7 @@ const CSS = `
   .lp-grad-green{background:linear-gradient(135deg,#4ade80,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
   /* SCROLL REVEAL */
-  .lp-reveal{opacity:0;transform:translateY(32px);transition:opacity .65s ease,transform .65s ease}
+  .lp-reveal{opacity:0;transform:translateY(32px);transition:opacity .65s ease,transform .65s ease;display:flex;flex-direction:column}
   .lp-revealed{opacity:1!important;transform:translateY(0)!important}
 
   /* GRAIN OVERLAY */
@@ -137,6 +137,40 @@ const CSS = `
   .lp-provider-pill:hover{transform:translateY(-2px)}
   .lp-ai-scan-line{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(168,85,247,.6),transparent);animation:lp-ai-scan 3s linear infinite;pointer-events:none}
 
+  /* ── AURORA BACKGROUND ── */
+  @keyframes aurora-1{0%,100%{transform:translate(0%,0%) scale(1) rotate(0deg)}33%{transform:translate(4%,-6%) scale(1.08) rotate(8deg)}66%{transform:translate(-3%,4%) scale(.95) rotate(-5deg)}}
+  @keyframes aurora-2{0%,100%{transform:translate(0%,0%) scale(1) rotate(0deg)}33%{transform:translate(-6%,5%) scale(1.12) rotate(-10deg)}66%{transform:translate(5%,-3%) scale(.92) rotate(6deg)}}
+  @keyframes aurora-3{0%,100%{transform:translate(0%,0%) scale(1)}50%{transform:translate(3%,6%) scale(1.1)}}
+  @keyframes aurora-4{0%,100%{transform:translate(0%,0%) scale(1) rotate(0deg)}50%{transform:translate(-4%,-4%) scale(1.06) rotate(15deg)}}
+  @keyframes aurora-hue{0%,100%{filter:blur(72px) hue-rotate(0deg)}50%{filter:blur(80px) hue-rotate(30deg)}}
+  .lp-aurora-blob{position:absolute;border-radius:50%;pointer-events:none;mix-blend-mode:screen}
+  .lp-aurora-1{width:700px;height:500px;background:radial-gradient(ellipse,rgba(99,70,255,.28) 0%,rgba(79,70,229,.12) 45%,transparent 70%);animation:aurora-1 18s ease-in-out infinite,aurora-hue 22s ease-in-out infinite;top:-10%;left:-15%}
+  .lp-aurora-2{width:600px;height:700px;background:radial-gradient(ellipse,rgba(168,85,247,.22) 0%,rgba(139,92,246,.1) 45%,transparent 70%);animation:aurora-2 22s ease-in-out infinite,aurora-hue 28s ease-in-out infinite 4s;top:20%;right:-10%}
+  .lp-aurora-3{width:500px;height:400px;background:radial-gradient(ellipse,rgba(56,189,248,.16) 0%,rgba(34,211,238,.07) 45%,transparent 70%);animation:aurora-3 16s ease-in-out infinite;bottom:5%;left:25%}
+  .lp-aurora-4{width:400px;height:500px;background:radial-gradient(ellipse,rgba(74,222,128,.12) 0%,rgba(16,185,129,.06) 45%,transparent 70%);animation:aurora-4 25s ease-in-out infinite;bottom:-5%;right:20%}
+  .lp-aurora-5{width:800px;height:300px;background:radial-gradient(ellipse,rgba(99,102,241,.1) 0%,transparent 65%);animation:aurora-1 30s ease-in-out infinite reverse;top:55%;left:10%}
+
+  /* ── MAGNETIC CURSOR ── */
+  @keyframes cursor-in{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+  .lp-cursor-dot{position:fixed;pointer-events:none;z-index:99999;mix-blend-mode:difference;transition:transform .08s ease;animation:cursor-in .3s ease both}
+  .lp-cursor-ring{position:fixed;pointer-events:none;z-index:99998;transition:transform .18s ease,width .2s ease,height .2s ease,opacity .2s ease,border-color .2s ease}
+  .lp-cursor-trail{position:fixed;pointer-events:none;z-index:99997;border-radius:50%;animation:lp-orb 1s ease infinite}
+
+  /* ── BENTO GRID ── */
+  .lp-bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:auto;gap:16px;align-items:stretch}
+  .lp-bento-2{grid-column:span 4}
+  .lp-bento-1{grid-column:span 2}
+  .lp-bento-full{grid-column:span 6}
+  .lp-bento-card{background:rgba(10,16,34,.85);border:1px solid rgba(99,102,241,.1);border-radius:18px;backdrop-filter:blur(12px);overflow:hidden;position:relative;transition:border-color .3s,box-shadow .3s,transform .3s}
+  .lp-bento-card:hover{border-color:rgba(99,102,241,.32);box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 0 1px rgba(99,102,241,.08);transform:translateY(-4px)}
+  .lp-bento-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.012) 0%,transparent 60%);pointer-events:none;z-index:0}
+  @keyframes bento-pulse{0%,100%{opacity:.5;transform:scale(.96)}50%{opacity:1;transform:scale(1.04)}}
+  @keyframes bento-flow{0%{stroke-dashoffset:200}100%{stroke-dashoffset:0}}
+  @keyframes bento-row-in{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes lp-spin-ring{to{transform:rotate(360deg)}}
+  @media(max-width:900px){.lp-bento-2{grid-column:span 6!important}.lp-bento-1{grid-column:span 3!important}}
+  @media(max-width:600px){.lp-bento-1{grid-column:span 6!important}}
+
   /* SCROLLBAR */
   .lp::-webkit-scrollbar{width:4px}.lp::-webkit-scrollbar-thumb{background:rgba(99,102,241,.4);border-radius:10px}
 
@@ -220,6 +254,485 @@ function useCountUp(target: number, duration = 1800, active = false): number {
     requestAnimationFrame(tick);
   }, [active, target, duration]);
   return val;
+}
+
+// ─── MAGNETIC CURSOR ─────────────────────────────────────────────────────────
+function MagneticCursor() {
+  const dotRef  = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+  const pos     = useRef({ x: -200, y: -200 });
+  const ring    = useRef({ x: -200, y: -200 });
+  const raf     = useRef<number>(0);
+  const hovered = useRef(false);
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => { pos.current = { x: e.clientX, y: e.clientY }; };
+    window.addEventListener('mousemove', move);
+
+    // Magnetic pull on .lp-magnetic elements
+    const onEnter = (e: Event) => {
+      hovered.current = true;
+      const el = e.currentTarget as HTMLElement;
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top  + rect.height / 2;
+      el.style.transition = 'transform .3s cubic-bezier(.34,1.56,.64,1)';
+      const pull = (ev: MouseEvent) => {
+        const dx = (ev.clientX - cx) * 0.38;
+        const dy = (ev.clientY - cy) * 0.38;
+        el.style.transform = `translate(${dx}px,${dy}px)`;
+      };
+      (el as any)._magneticPull = pull;
+      window.addEventListener('mousemove', pull);
+    };
+    const onLeave = (e: Event) => {
+      hovered.current = false;
+      const el = e.currentTarget as HTMLElement;
+      el.style.transform = '';
+      if ((el as any)._magneticPull) window.removeEventListener('mousemove', (el as any)._magneticPull);
+    };
+
+    const magnetics = document.querySelectorAll<HTMLElement>('.lp-magnetic');
+    magnetics.forEach(el => {
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mouseleave', onLeave);
+    });
+
+    // Smooth ring lerp
+    const animate = () => {
+      ring.current.x += (pos.current.x - ring.current.x) * 0.12;
+      ring.current.y += (pos.current.y - ring.current.y) * 0.12;
+      if (dotRef.current) {
+        dotRef.current.style.left  = `${pos.current.x}px`;
+        dotRef.current.style.top   = `${pos.current.y}px`;
+      }
+      if (ringRef.current) {
+        ringRef.current.style.left = `${ring.current.x}px`;
+        ringRef.current.style.top  = `${ring.current.y}px`;
+      }
+      raf.current = requestAnimationFrame(animate);
+    };
+    raf.current = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener('mousemove', move);
+      cancelAnimationFrame(raf.current);
+      magnetics.forEach(el => {
+        el.removeEventListener('mouseenter', onEnter);
+        el.removeEventListener('mouseleave', onLeave);
+        if ((el as any)._magneticPull) window.removeEventListener('mousemove', (el as any)._magneticPull);
+      });
+    };
+  }, []);
+
+  // Only show on non-touch devices
+  if (typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) return null;
+
+  return (
+    <>
+      {/* Inner dot */}
+      <div
+        ref={dotRef}
+        className="lp-cursor-dot"
+        style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: '#fff',
+          marginLeft: -4, marginTop: -4,
+        }}
+      />
+      {/* Outer ring */}
+      <div
+        ref={ringRef}
+        className="lp-cursor-ring"
+        style={{
+          width: 36, height: 36, borderRadius: '50%',
+          border: '1.5px solid rgba(139,92,246,0.7)',
+          marginLeft: -18, marginTop: -18,
+          background: 'rgba(99,102,241,0.04)',
+          backdropFilter: 'blur(1px)',
+        }}
+      />
+    </>
+  );
+}
+
+// ─── AURORA BACKGROUND ────────────────────────────────────────────────────────
+function AuroraBg() {
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      {/* Deep base layer */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse 120% 80% at 50% -20%, rgba(30,20,80,.55) 0%, transparent 60%)',
+      }} />
+      {/* Aurora blobs */}
+      <div className="lp-aurora-blob lp-aurora-1" />
+      <div className="lp-aurora-blob lp-aurora-2" />
+      <div className="lp-aurora-blob lp-aurora-3" />
+      <div className="lp-aurora-blob lp-aurora-4" />
+      <div className="lp-aurora-blob lp-aurora-5" />
+      {/* Fine noise grain on top of aurora */}
+      <div style={{
+        position: 'absolute', inset: 0, opacity: .04,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        backgroundSize: '180px 180px',
+      }} />
+    </div>
+  );
+}
+
+// ─── BENTO FEATURES ───────────────────────────────────────────────────────────
+
+/* tiny helper: gradient top-border accent on a bento card */
+function BentoCard({ children, accent, className = '', style = {} }: {
+  children: React.ReactNode; accent: string; className?: string; style?: React.CSSProperties;
+}) {
+  return (
+    <div className={`lp-bento-card ${className}`} style={{
+      height: '100%', position: 'relative', ...style,
+    }}>
+      {/* coloured top border */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: accent, borderRadius: '18px 18px 0 0', opacity: .85 }} />
+      {/* inner spotlight glow */}
+      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: 80, background: accent, filter: 'blur(40px)', opacity: .07, pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', zIndex: 1, padding: '26px 24px 22px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function BentoIconBadge({ icon, bg, border, glow }: { icon: React.ReactNode; bg: string; border: string; glow: string }) {
+  return (
+    <div style={{ width: 42, height: 42, borderRadius: 11, background: bg, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 18px ${glow}`, flexShrink: 0 }}>
+      {icon}
+    </div>
+  );
+}
+
+function BentoMiniTerminal() {
+  const LINES = [
+    { c: '#4ade80', s: '✓ delivered', e: 'payment.success',   ms: '14ms',  delay: 0    },
+    { c: '#4ade80', s: '✓ delivered', e: 'order.created',     ms: '22ms',  delay: 900  },
+    { c: '#f87171', s: '✗ failed',   e: 'invoice.paid',       ms: '—',     delay: 1800 },
+    { c: '#f59e0b', s: '↻ retry ×1', e: 'invoice.paid',       ms: '31ms',  delay: 2700 },
+    { c: '#4ade80', s: '✓ delivered', e: 'invoice.paid',      ms: '31ms',  delay: 3600 },
+    { c: '#4ade80', s: '✓ delivered', e: 'subscription.renew', ms: '9ms',  delay: 4400 },
+  ];
+  const [visible, setVisible] = useState<number[]>([]);
+
+  useEffect(() => {
+    let timers: ReturnType<typeof setTimeout>[] = [];
+    const schedule = () => {
+      LINES.forEach((l, i) => {
+        const t = setTimeout(() => setVisible(prev => [...prev, i]), l.delay);
+        timers.push(t);
+      });
+    };
+    schedule();
+    const cycle = setInterval(() => {
+      timers.forEach(clearTimeout);
+      timers = [];
+      setVisible([]);
+      const r = setTimeout(schedule, 300);
+      timers.push(r);
+    }, 5800);
+    return () => { timers.forEach(clearTimeout); clearInterval(cycle); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div>
+      {/* terminal chrome */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid rgba(99,102,241,.08)' }}>
+        {['#f87171','#f59e0b','#4ade80'].map(c => <div key={c} style={{ width: 9, height: 9, borderRadius: '50%', background: c, opacity: .7 }} />)}
+        <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: '#1e3a5f', marginLeft: 6 }}>webhook.delivery — live</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {LINES.map((l, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            opacity: visible.includes(i) ? 1 : 0,
+            transform: visible.includes(i) ? 'none' : 'translateX(-10px)',
+            transition: 'opacity .35s ease, transform .35s ease',
+            padding: '5px 10px', borderRadius: 7,
+            background: visible.includes(i) ? 'rgba(255,255,255,.025)' : 'transparent',
+          }}>
+            <span style={{ fontFamily: 'JetBrains Mono,monospace', color: l.c, fontWeight: 700, fontSize: 10, minWidth: 80 }}>{l.s}</span>
+            <span style={{ fontFamily: 'JetBrains Mono,monospace', color: '#475569', fontSize: 10, flex: 1 }}>{l.e}</span>
+            <span style={{ fontFamily: 'JetBrains Mono,monospace', color: '#1e3a5f', fontSize: 10 }}>{l.ms}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BentoSigningDemo() {
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setStep(p => (p + 1) % 3), 1800);
+    return () => clearInterval(t);
+  }, []);
+  const steps = [
+    { label: 'Payload received',    color: '#94a3b8', icon: '→' },
+    { label: 'HMAC-SHA256 signed',  color: '#818cf8', icon: '🔐' },
+    { label: 'Signature verified ✓', color: '#4ade80', icon: '✓' },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 'auto' }}>
+      {steps.map((s, i) => (
+        <div key={i} style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '9px 12px', borderRadius: 10,
+          background: step === i ? 'rgba(99,102,241,.1)' : 'rgba(255,255,255,.02)',
+          border: `1px solid ${step === i ? 'rgba(99,102,241,.35)' : 'rgba(255,255,255,.04)'}`,
+          boxShadow: step === i ? '0 0 20px rgba(99,102,241,.08)' : 'none',
+          transition: 'all .45s cubic-bezier(.4,0,.2,1)',
+        }}>
+          <div style={{
+            width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
+            background: step === i ? s.color : '#1e293b',
+            boxShadow: step === i ? `0 0 12px ${s.color}` : 'none',
+            transition: 'all .45s ease',
+          }} />
+          <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 11, color: step === i ? s.color : '#334155', transition: 'color .45s ease' }}>{s.label}</span>
+          {step === i && <span style={{ marginLeft: 'auto', fontSize: 13 }}>{s.icon}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BentoAnalyticsBar() {
+  const bars = [
+    { label: 'Mon', pct: 87, fail: 4  },
+    { label: 'Tue', pct: 94, fail: 1  },
+    { label: 'Wed', pct: 68, fail: 9  },
+    { label: 'Thu', pct: 98, fail: 0  },
+    { label: 'Fri', pct: 82, fail: 3  },
+    { label: 'Sat', pct: 74, fail: 5  },
+    { label: 'Sun', pct: 99, fail: 0  },
+  ];
+  const maxH = 88; // px for the tallest bar
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7, height: maxH + 20 }}>
+      {bars.map((b, i) => {
+        const barH = Math.round((b.pct / 100) * maxH);
+        const failH = Math.round((b.fail / 100) * maxH);
+        return (
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div style={{
+              width: '100%', height: barH, borderRadius: '5px 5px 3px 3px', position: 'relative', overflow: 'hidden',
+              background: 'linear-gradient(to top, rgba(99,102,241,.75) 0%, rgba(139,92,246,.5) 60%, rgba(168,85,247,.3) 100%)',
+              boxShadow: '0 0 10px rgba(99,102,241,.18)',
+              animation: `bento-pulse ${2.2 + i * 0.28}s ease-in-out infinite`,
+            }}>
+              {b.fail > 0 && (
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: failH, background: 'linear-gradient(to top, rgba(248,113,113,.8), rgba(248,113,113,.3))', borderRadius: '0 0 3px 3px' }} />
+              )}
+              {/* top highlight */}
+              <div style={{ position: 'absolute', top: 0, left: 2, right: 2, height: 2, background: 'rgba(255,255,255,.15)', borderRadius: 2 }} />
+            </div>
+            <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: '#475569', letterSpacing: '.02em' }}>{b.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BentoCircuitRing() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setOpen(p => !p), 3000);
+    return () => clearInterval(t);
+  }, []);
+  const color = open ? '#f87171' : '#4ade80';
+  const circumference = 2 * Math.PI * 36;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 'auto' }}>
+      <div style={{ position: 'relative', width: 88, height: 88, flexShrink: 0 }}>
+        {/* outer glow */}
+        <div style={{ position: 'absolute', inset: 4, borderRadius: '50%', background: color, filter: 'blur(16px)', opacity: .12, transition: 'background 1s' }} />
+        <svg width={88} height={88} viewBox="0 0 88 88" style={{ position: 'absolute', inset: 0 }}>
+          <circle cx={44} cy={44} r={36} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth={7} />
+          <circle cx={44} cy={44} r={36} fill="none"
+            stroke={color} strokeWidth={7} strokeLinecap="round"
+            strokeDasharray={`${open ? circumference * 0.22 : circumference} ${circumference}`}
+            transform="rotate(-90 44 44)"
+            style={{ transition: 'stroke-dasharray 1.4s cubic-bezier(.4,0,.2,1), stroke .8s ease', filter: `drop-shadow(0 0 6px ${color})` }}
+          />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, fontWeight: 900, color, transition: 'color .8s', letterSpacing: '.04em' }}>{open ? 'OPEN' : 'CLOSED'}</span>
+        </div>
+      </div>
+      <div>
+        <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 11, fontWeight: 700, color, transition: 'color .8s', marginBottom: 5 }}>{open ? '⚡ Tripped' : '✓ Healthy'}</div>
+        <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: '#334155', lineHeight: 1.6 }}>Auto-heals<br />on recovery</div>
+      </div>
+    </div>
+  );
+}
+
+function BentoFeatures() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref);
+  return (
+    <section id="features" style={{ padding: '96px 0 80px' }}>
+      <div className="lp-wrap">
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <span className="lp-sec-label">// CAPABILITIES</span>
+            <h2 className="lp-sec-title" style={{ margin: '0 auto 14px' }}>
+              Everything you need for<br /><span className="lp-grad-text">reliable webhook delivery</span>
+            </h2>
+            <p className="lp-sec-sub" style={{ margin: '0 auto' }}>
+              Built by developers who got tired of writing the same retry logic over and over.
+            </p>
+          </div>
+        </Reveal>
+
+        <div ref={ref} className="lp-bento" style={{ opacity: inView ? 1 : 0, transition: 'opacity .6s ease' }}>
+
+          {/* ROW 1 ─────────────────────────────────────────── */}
+
+          {/* BIG: Guaranteed Delivery — span 4 */}
+          <Reveal delay={0} className="lp-bento-2">
+            <BentoCard accent="linear-gradient(90deg,#fbbf24,#f59e0b)" style={{ minHeight: 240 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 20 }}>
+                <BentoIconBadge icon={<Zap size={18} color="#fbbf24" />} bg="rgba(251,191,36,.1)" border="rgba(251,191,36,.25)" glow="rgba(251,191,36,.15)" />
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 16, color: '#f1f5f9', marginBottom: 2 }}>Guaranteed Delivery</div>
+                  <div style={{ fontSize: 12, color: '#475569' }}>5-layer retry · Dead Letter Queue · one-click replay</div>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(0,0,0,.28)', borderRadius: 12, padding: '14px 16px', border: '1px solid rgba(251,191,36,.07)', flex: 1 }}>
+                <BentoMiniTerminal />
+              </div>
+            </BentoCard>
+          </Reveal>
+
+          {/* SMALL: HMAC Signing — span 2 */}
+          <Reveal delay={80} className="lp-bento-1">
+            <BentoCard accent="linear-gradient(90deg,#4ade80,#22d3ee)" style={{ minHeight: 240 }}>
+              <BentoIconBadge icon={<Shield size={18} color="#4ade80" />} bg="rgba(74,222,128,.1)" border="rgba(74,222,128,.25)" glow="rgba(74,222,128,.12)" />
+              <div style={{ marginTop: 14, marginBottom: 6, fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>HMAC-SHA256 Signing</div>
+              <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.65, marginBottom: 18 }}>Every payload signed. Verify in 3 lines of code.</div>
+              <BentoSigningDemo />
+            </BentoCard>
+          </Reveal>
+
+          {/* ROW 2 ─────────────────────────────────────────── */}
+
+          {/* SMALL: Dead Letter Queue — span 2 */}
+          <Reveal delay={120} className="lp-bento-1">
+            <BentoCard accent="linear-gradient(90deg,#f87171,#fb923c)" style={{ minHeight: 210 }}>
+              <BentoIconBadge icon={<RefreshCw size={18} color="#f87171" />} bg="rgba(248,113,113,.1)" border="rgba(248,113,113,.25)" glow="rgba(248,113,113,.12)" />
+              <div style={{ marginTop: 14, marginBottom: 6, fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>Dead Letter Queue</div>
+              <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.65, marginBottom: 18 }}>Failed events captured. Full audit trail. Replay any event instantly.</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+                {[{ n: '2.4K', l: 'Captured', c: '#f87171' }, { n: '99.8%', l: 'Replayed', c: '#4ade80' }].map(({ n, l, c }) => (
+                  <div key={l} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, background: 'rgba(0,0,0,.3)', border: '1px solid rgba(255,255,255,.04)', textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 20, fontWeight: 900, color: c, lineHeight: 1.2 }}>{n}</div>
+                    <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8, color: '#334155', marginTop: 3, letterSpacing: '.06em', textTransform: 'uppercase' }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+            </BentoCard>
+          </Reveal>
+
+          {/* SMALL: Circuit Breaker — span 2 */}
+          <Reveal delay={170} className="lp-bento-1">
+            <BentoCard accent="linear-gradient(90deg,#fb923c,#f59e0b)" style={{ minHeight: 210 }}>
+              <BentoIconBadge icon={<Layers size={18} color="#fb923c" />} bg="rgba(251,146,60,.1)" border="rgba(251,146,60,.25)" glow="rgba(251,146,60,.12)" />
+              <div style={{ marginTop: 14, marginBottom: 6, fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>Circuit Breaker</div>
+              <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.65, marginBottom: 4 }}>Auto endpoint protection when failure rate spikes. Self-heals.</div>
+              <BentoCircuitRing />
+            </BentoCard>
+          </Reveal>
+
+          {/* BIG: Real-time Analytics — span 2 in row 2 (fills remaining 2 cols) */}
+          <Reveal delay={220} className="lp-bento-1">
+            <BentoCard accent="linear-gradient(90deg,#818cf8,#6366f1)" style={{ minHeight: 210 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <BentoIconBadge icon={<BarChart3 size={18} color="#818cf8" />} bg="rgba(129,140,248,.1)" border="rgba(129,140,248,.25)" glow="rgba(129,140,248,.12)" />
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block', animation: 'lp-dot-blink 1.2s ease infinite' }} />
+                  <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: '#4ade80', fontWeight: 700 }}>LIVE</span>
+                </div>
+              </div>
+              <div style={{ marginTop: 12, marginBottom: 4, fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>Real-time Analytics</div>
+              <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.65, marginBottom: 16 }}>Delivery rates, latency histograms, live heatmap.</div>
+              <div style={{ marginTop: 'auto' }}>
+                <BentoAnalyticsBar />
+              </div>
+            </BentoCard>
+          </Reveal>
+
+          {/* ROW 3 ─────────────────────────────────────────── */}
+
+          {/* SMALL: Payload Transforms — span 2 */}
+          <Reveal delay={260} className="lp-bento-1">
+            <BentoCard accent="linear-gradient(90deg,#38bdf8,#818cf8)" style={{ minHeight: 190 }}>
+              <BentoIconBadge icon={<Code2 size={18} color="#38bdf8" />} bg="rgba(56,189,248,.1)" border="rgba(56,189,248,.25)" glow="rgba(56,189,248,.12)" />
+              <div style={{ marginTop: 14, marginBottom: 6, fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>Payload Transforms</div>
+              <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.65, marginBottom: 14 }}>Modify, filter, or enrich payloads with JS before delivery.</div>
+              <div style={{ background: 'rgba(0,0,0,.35)', borderRadius: 10, padding: '11px 13px', fontFamily: 'JetBrains Mono,monospace', fontSize: 10.5, border: '1px solid rgba(56,189,248,.08)', lineHeight: 1.8, marginTop: 'auto' }}>
+                <div><span style={{ color: '#818cf8' }}>remove</span><span style={{ color: '#64748b' }}>(</span><span style={{ color: '#4ade80' }}>&apos;card_number&apos;</span><span style={{ color: '#64748b' }}>)</span></div>
+                <div><span style={{ color: '#818cf8' }}>rename</span><span style={{ color: '#64748b' }}>(</span><span style={{ color: '#4ade80' }}>&apos;uid&apos;</span><span style={{ color: '#64748b' }}>, </span><span style={{ color: '#4ade80' }}>&apos;user_id&apos;</span><span style={{ color: '#64748b' }}>)</span></div>
+                <div><span style={{ color: '#818cf8' }}>add</span><span style={{ color: '#64748b' }}>(</span><span style={{ color: '#4ade80' }}>&apos;source&apos;</span><span style={{ color: '#64748b' }}>, </span><span style={{ color: '#fb923c' }}>&apos;webhookos&apos;</span><span style={{ color: '#64748b' }}>)</span></div>
+              </div>
+            </BentoCard>
+          </Reveal>
+
+          {/* SMALL: Global Routing — span 2 */}
+          <Reveal delay={300} className="lp-bento-1">
+            <BentoCard accent="linear-gradient(90deg,#a855f7,#ec4899)" style={{ minHeight: 190 }}>
+              <BentoIconBadge icon={<Globe size={18} color="#a855f7" />} bg="rgba(168,85,247,.1)" border="rgba(168,85,247,.25)" glow="rgba(168,85,247,.12)" />
+              <div style={{ marginTop: 14, marginBottom: 6, fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>Global Routing</div>
+              <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.65, marginBottom: 16 }}>Multi-region delivery with automatic failover and geo-routing.</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginTop: 'auto' }}>
+                {[{ r: 'US East', ms: '8ms', c: '#4ade80' }, { r: 'EU West', ms: '12ms', c: '#4ade80' }, { r: 'AP South', ms: '18ms', c: '#f59e0b' }, { r: 'US West', ms: '11ms', c: '#4ade80' }].map(({ r, ms, c }) => (
+                  <div key={r} style={{ padding: '7px 10px', borderRadius: 8, background: 'rgba(0,0,0,.3)', border: '1px solid rgba(168,85,247,.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8.5, color: '#475569' }}>{r}</span>
+                    <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: c, fontWeight: 700 }}>{ms}</span>
+                  </div>
+                ))}
+              </div>
+            </BentoCard>
+          </Reveal>
+
+          {/* BIG: Stats strip — span 2 */}
+          <Reveal delay={340} className="lp-bento-1">
+            <BentoCard accent="linear-gradient(90deg,#6366f1,#a855f7)" style={{ minHeight: 190 }}>
+              <BentoIconBadge icon={<Activity size={18} color="#6366f1" />} bg="rgba(99,102,241,.1)" border="rgba(99,102,241,.25)" glow="rgba(99,102,241,.12)" />
+              <div style={{ marginTop: 14, marginBottom: 6, fontWeight: 800, fontSize: 15, color: '#f1f5f9' }}>Platform Scale</div>
+              <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.65, marginBottom: 16 }}>Production-grade infrastructure trusted by thousands of teams.</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
+                {[
+                  { label: '99.99% uptime SLA', pct: 100, c: '#4ade80' },
+                  { label: 'Avg delivery < 50ms', pct: 95,  c: '#818cf8' },
+                  { label: 'Retry success rate',   pct: 88,  c: '#f59e0b' },
+                ].map(({ label, pct, c }) => (
+                  <div key={label}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: '#475569' }}>{label}</span>
+                      <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: c, fontWeight: 700 }}>{pct}%</span>
+                    </div>
+                    <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,.04)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: `linear-gradient(90deg, ${c}, ${c}88)` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </BentoCard>
+          </Reveal>
+
+        </div>
+      </div>
+    </section>
+  );
 }
 
 // ─── PARTICLES ───────────────────────────────────────────────────────────────
@@ -326,7 +839,7 @@ function GlowCard({ children, color = '#6366f1', style = {} }: { children: React
 }
 
 // ─── SCROLL REVEAL ───────────────────────────────────────────────────────────
-function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [vis, setVis] = useState(false);
   useEffect(() => {
@@ -336,7 +849,7 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
     return () => obs.disconnect();
   }, []);
   return (
-    <div ref={ref} className={`lp-reveal ${vis ? 'lp-revealed' : ''}`} style={{ transitionDelay: `${delay}ms` }}>
+    <div ref={ref} className={`lp-reveal ${vis ? 'lp-revealed' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
       {children}
     </div>
   );
@@ -640,16 +1153,12 @@ function Hero() {
   const tagline = useTypewriter(TYPEWRITER_PHRASES);
   return (
     <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-      {/* Gradient mesh */}
-      <div className="lp-mesh" />
+      {/* Aurora animated background */}
+      <AuroraBg />
       {/* Particle network */}
       <ParticleCanvas />
       {/* Grid */}
-      <div className="lp-grid" style={{ position: 'absolute', inset: 0, opacity: .5 }} />
-      {/* Orbs */}
-      <div className="lp-orb" style={{ width: 560, height: 560, background: 'radial-gradient(circle,rgba(79,70,229,.2),transparent 70%)', top: -100, left: -120, animationDuration: '7s' }} />
-      <div className="lp-orb" style={{ width: 440, height: 440, background: 'radial-gradient(circle,rgba(139,92,246,.13),transparent 70%)', bottom: -80, right: -60, animationDuration: '9s', animationDelay: '2s' }} />
-      <div className="lp-orb" style={{ width: 260, height: 260, background: 'radial-gradient(circle,rgba(56,189,248,.08),transparent 70%)', top: '44%', right: '30%', animationDuration: '11s', animationDelay: '1s' }} />
+      <div className="lp-grid" style={{ position: 'absolute', inset: 0, opacity: .35 }} />
       <div style={{ position: 'absolute', top: '48%', left: 0, right: 0, height: 1, background: 'linear-gradient(90deg,transparent,rgba(99,102,241,.12),transparent)', pointerEvents: 'none' }} />
 
       <div className="lp-wrap" style={{ width: '100%', paddingTop: 120, paddingBottom: 80, position: 'relative', zIndex: 1 }}>
@@ -676,8 +1185,8 @@ function Hero() {
               <span style={{ fontSize: 13, color: '#c084fc', lineHeight: 1.5 }}>New: AI Debugger, Schema Generator, DLQ Triage &amp; PII Detector — all in your dashboard.</span>
             </div>
             <div className="lp-au3" style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 40 }}>
-              <Link href="/auth/register" className="lp-btn-pri" style={{ fontSize: 15, padding: '14px 32px' }}>Start for Free <ArrowRight size={16} /></Link>
-              <a href="#features" className="lp-btn-out" style={{ fontSize: 15, padding: '14px 32px' }}>See how it works</a>
+              <Link href="/auth/register" className="lp-btn-pri lp-magnetic" style={{ fontSize: 15, padding: '14px 32px' }}>Start for Free <ArrowRight size={16} /></Link>
+              <a href="#features" className="lp-btn-out lp-magnetic" style={{ fontSize: 15, padding: '14px 32px' }}>See how it works</a>
             </div>
             <div className="lp-au4" style={{ display: 'flex', flexWrap: 'wrap', gap: 22 }}>
               {['No credit card required', 'Free plan forever', 'Setup in 5 minutes'].map(l => (
@@ -1070,7 +1579,7 @@ function CTABanner() {
               <h2 style={{ fontSize: 'clamp(26px,4vw,50px)', fontWeight: 900, letterSpacing: '-1.5px', color: '#f8fafc', marginBottom: 14 }}>Start delivering webhooks<br /><span className="lp-grad-text">reliably in minutes.</span></h2>
               <p style={{ fontSize: 15.5, color: '#94a3b8', margin: '0 auto 36px', maxWidth: 440 }}>Free plan, no credit card, production-grade from day one.</p>
               <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Link href="/auth/register" className="lp-btn-pri" style={{ fontSize: 16, padding: '15px 38px' }}>Create Free Account <ArrowRight size={17} /></Link>
+                <Link href="/auth/register" className="lp-btn-pri lp-magnetic" style={{ fontSize: 16, padding: '15px 38px' }}>Create Free Account <ArrowRight size={17} /></Link>
                 <Link href="/auth/login" className="lp-btn-out" style={{ fontSize: 15, padding: '15px 32px' }}>Sign In</Link>
               </div>
             </div>
@@ -1144,6 +1653,8 @@ export default function LandingPage() {
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       {/* Grain texture overlay */}
       <div className="lp-grain" />
+      {/* Magnetic cursor — desktop only */}
+      <MagneticCursor />
       {/* Corner activity feed */}
       <ActivityFeed />
       <div className="lp">
@@ -1151,7 +1662,7 @@ export default function LandingPage() {
         <Hero />
         <TickerBar />
         <Stats />
-        <Features />
+        <BentoFeatures />
         <CodeSection />
         <FlowSection />
         <AiSection />
