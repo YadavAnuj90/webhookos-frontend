@@ -1,9 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi, endpointsApi } from '@/lib/api';
 import { PRIORITY_CONFIG, EventPriority } from '@/lib/types';
-import { Zap, RefreshCw, Send, X, ChevronRight, Clock, Sparkles } from 'lucide-react';
+import { Zap, RefreshCw, Send, X, ChevronRight, Clock, Sparkles, CheckSquare, Square, Trash2, RotateCcw } from 'lucide-react';
 import AiDebuggerModal from '@/components/ai/AiDebuggerModal';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
@@ -92,8 +92,6 @@ function SendModal({ onClose }: { onClose: () => void }) {
             <label className="label">Event Type</label>
             <input className="input" placeholder="payment.success" value={form.eventType} onChange={e => setForm(p => ({ ...p, eventType: e.target.value }))} required />
           </div>
-
-          {/* Priority picker */}
           <div className="field">
             <label className="label">Priority</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
@@ -112,7 +110,6 @@ function SendModal({ onClose }: { onClose: () => void }) {
               })}
             </div>
           </div>
-
           <div className="field">
             <label className="label">Payload (JSON)</label>
             <textarea className="input" style={{ minHeight: 90, fontFamily: 'var(--font-mono)', fontSize: 11, resize: 'vertical' }} value={form.payload} onChange={e => setForm(p => ({ ...p, payload: e.target.value }))} required />
@@ -133,6 +130,48 @@ function SendModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Bulk Action Bar ──────────────────────────────────────────────────────────
+function BulkBar({
+  count, onReplay, onClearSelect, replayLoading,
+}: {
+  count: number;
+  onReplay: () => void;
+  onClearSelect: () => void;
+  replayLoading: boolean;
+}) {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+      background: 'var(--bg2)', border: '1px solid var(--border)',
+      borderRadius: 14, padding: '10px 18px',
+      display: 'flex', alignItems: 'center', gap: 12,
+      boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+      zIndex: 300, backdropFilter: 'blur(12px)',
+      animation: 'slideUp .18s ease',
+    }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text2)', fontWeight: 600 }}>
+        {count} selected
+      </span>
+      <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
+      <button
+        className="btn btn-ghost btn-sm"
+        onClick={onReplay}
+        disabled={replayLoading}
+        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+      >
+        <RotateCcw size={12} />{replayLoading ? 'Replaying...' : 'Bulk Replay'}
+      </button>
+      <button
+        className="btn btn-ghost btn-sm"
+        onClick={onClearSelect}
+        style={{ color: 'var(--text3)' }}
+      >
+        <X size={12} />Deselect
+      </button>
+    </div>
+  );
+}
+
 export default function EventsPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
@@ -141,6 +180,9 @@ export default function EventsPage() {
   const [showSend, setShowSend] = useState(false);
   const [showAiDebug, setShowAiDebug] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+
+  // Bulk select state
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
     queryKey: ['events', page, status, priority],
@@ -154,6 +196,42 @@ export default function EventsPage() {
     onError: (e: any) => toast.error(e.response?.data?.message || 'Replay failed'),
   });
 
+  const bulkReplay = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map(id => eventsApi.replay(PID, id)));
+    },
+    onSuccess: () => {
+      toast.success(`${selected.size} events queued for replay`);
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: () => toast.error('Some replays failed'),
+  });
+
+  const events: any[] = data?.events || [];
+  const allIds = events.map((e: any) => e._id);
+  const allSelected = allIds.length > 0 && allIds.every((id: string) => selected.has(id));
+
+  const toggleAll = useCallback(() => {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(allIds));
+    }
+  }, [allSelected, allIds]);
+
+  const toggleOne = useCallback((id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
+
+  const replayableSelected = events
+    .filter((e: any) => selected.has(e._id) && ['failed', 'dead'].includes(e.status))
+    .map((e: any) => e._id);
+
   return (
     <div className="page">
       <div className="ph">
@@ -162,10 +240,10 @@ export default function EventsPage() {
           <p>// Webhook event log · {data?.total || 0} total</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select className="input" style={{ width: 135 }} value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
+          <select className="input" style={{ width: 135 }} value={status} onChange={e => { setStatus(e.target.value); setPage(1); setSelected(new Set()); }}>
             {STATUS_OPTS.map(s => <option key={s} value={s}>{s || 'All Status'}</option>)}
           </select>
-          <select className="input" style={{ width: 145 }} value={priority} onChange={e => { setPriority(e.target.value); setPage(1); }}>
+          <select className="input" style={{ width: 145 }} value={priority} onChange={e => { setPriority(e.target.value); setPage(1); setSelected(new Set()); }}>
             {PRIORITY_OPTS.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
           </select>
           <button className="btn btn-ghost" onClick={() => qc.invalidateQueries({ queryKey: ['events'] })} title="Refresh">
@@ -188,10 +266,11 @@ export default function EventsPage() {
         {isLoading ? (
           <table className="tbl">
             <thead><tr>
+              <th style={{ width: 36 }}></th>
               <th>Event Type</th><th>Priority</th><th>Endpoint</th><th>Status</th>
               <th>Retries</th><th>Created</th><th></th>
             </tr></thead>
-            <SkeletonTable rows={8} cols={7} />
+            <SkeletonTable rows={8} cols={8} />
           </table>
         ) : !data?.events?.length ? (
           <Empty
@@ -202,61 +281,78 @@ export default function EventsPage() {
         ) : (
           <table className="tbl">
             <thead><tr>
+              <th style={{ width: 36 }}>
+                <button onClick={toggleAll} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text3)' }}>
+                  {allSelected ? <CheckSquare size={14} color="var(--accent2)" /> : <Square size={14} />}
+                </button>
+              </th>
               <th>Event Type</th><th>Priority</th><th>Endpoint</th><th>Status</th>
               <th>Retries</th><th>Created</th><th></th>
             </tr></thead>
             <tbody>
-              {data.events.map((e: any) => (
-                <tr key={e._id} style={{ cursor: 'pointer' }} onClick={() => setSelectedEvent(e)}>
-                  <td>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}>{e.eventType}</span>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{e._id?.slice(-10)}</div>
-                    {e.expiresAt && (
-                      <div style={{ marginTop: 3 }}>
-                        <ExpiryCountdown expiresAt={e.expiresAt} />
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    <PriorityBadge p={e.priority || 'p2'} />
-                  </td>
-                  <td>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)' }}>{e.endpointId?.slice(-10)}</span>
-                  </td>
-                  <td><StatusBadge status={e.status} /></td>
-                  <td>
-                    <span style={{
-                      fontFamily: 'var(--font-mono)', fontSize: 10,
-                      color: e.retryCount > 0 ? 'var(--yellow)' : 'var(--text3)',
-                      fontWeight: e.retryCount > 0 ? 600 : 400,
-                    }}>
-                      {e.retryCount > 0 ? `×${e.retryCount}` : '—'}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)' }}>
-                      {formatDistanceToNow(new Date(e.createdAt), { addSuffix: true })}
-                    </span>
-                  </td>
-                  <td onClick={ev => ev.stopPropagation()}>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      {['failed', 'dead'].includes(e.status) && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => replay.mutate(e._id)}
-                          disabled={replay.isPending}
-                          title="Retry delivery"
-                        >
-                          <RefreshCw size={10} />Retry
-                        </button>
-                      )}
-                      <button className="btn-icon btn-sm" title="View details">
-                        <ChevronRight size={12} />
+              {data.events.map((e: any) => {
+                const isSelected = selected.has(e._id);
+                return (
+                  <tr
+                    key={e._id}
+                    style={{ cursor: 'pointer', background: isSelected ? 'rgba(99,102,241,0.06)' : undefined }}
+                    onClick={() => setSelectedEvent(e)}
+                  >
+                    <td onClick={ev => ev.stopPropagation()}>
+                      <button onClick={() => toggleOne(e._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text3)' }}>
+                        {isSelected ? <CheckSquare size={14} color="var(--accent2)" /> : <Square size={14} />}
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)' }}>{e.eventType}</span>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{e._id?.slice(-10)}</div>
+                      {e.expiresAt && (
+                        <div style={{ marginTop: 3 }}>
+                          <ExpiryCountdown expiresAt={e.expiresAt} />
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <PriorityBadge p={e.priority || 'p2'} />
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)' }}>{e.endpointId?.slice(-10)}</span>
+                    </td>
+                    <td><StatusBadge status={e.status} /></td>
+                    <td>
+                      <span style={{
+                        fontFamily: 'var(--font-mono)', fontSize: 10,
+                        color: e.retryCount > 0 ? 'var(--yellow)' : 'var(--text3)',
+                        fontWeight: e.retryCount > 0 ? 600 : 400,
+                      }}>
+                        {e.retryCount > 0 ? `×${e.retryCount}` : '—'}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)' }}>
+                        {formatDistanceToNow(new Date(e.createdAt), { addSuffix: true })}
+                      </span>
+                    </td>
+                    <td onClick={ev => ev.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        {['failed', 'dead'].includes(e.status) && (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => replay.mutate(e._id)}
+                            disabled={replay.isPending}
+                            title="Retry delivery"
+                          >
+                            <RefreshCw size={10} />Retry
+                          </button>
+                        )}
+                        <button className="btn-icon btn-sm" title="View details">
+                          <ChevronRight size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -269,6 +365,19 @@ export default function EventsPage() {
           </div>
         )}
       </div>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <BulkBar
+          count={selected.size}
+          replayLoading={bulkReplay.isPending}
+          onReplay={() => {
+            if (replayableSelected.length === 0) { toast.error('No failed/dead events selected'); return; }
+            bulkReplay.mutate(replayableSelected);
+          }}
+          onClearSelect={() => setSelected(new Set())}
+        />
+      )}
 
       {showSend && <SendModal onClose={() => setShowSend(false)} />}
       {showAiDebug && <AiDebuggerModal onClose={() => setShowAiDebug(false)} />}

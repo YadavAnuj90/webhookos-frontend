@@ -107,11 +107,53 @@ function NavItem({ href, icon: Icon, label, collapsed, color }: { href: string; 
   const pathname = usePathname();
   const active = pathname === href || (href !== '/billing' && pathname.startsWith(href + '/')) || (href === '/billing' && pathname === '/billing');
   const ac = color || 'var(--accent2)';
+  const itemRef = useRef<HTMLDivElement>(null);
+  const [glare, setGlare] = useState<{ x: number; y: number } | null>(null);
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    const el = itemRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setGlare({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
   return (
     <Link href={href} style={{ textDecoration: 'none' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, marginBottom: 1, background: active ? (color ? `${color}18` : 'rgba(99,102,241,0.13)') : 'transparent', color: active ? ac : 'var(--text3)', borderLeft: active ? `2px solid ${ac}` : '2px solid transparent', transition: 'all 0.15s', cursor: 'pointer', overflow: 'hidden' }}>
-        <Icon size={15} style={{ flexShrink: 0, color: active ? ac : 'inherit' }} />
-        {!collapsed && <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}>{label}</span>}
+      <div
+        ref={itemRef}
+        onMouseMove={onMouseMove}
+        onMouseLeave={() => setGlare(null)}
+        style={{
+          position: 'relative',
+          display: 'flex', alignItems: 'center', gap: 9,
+          padding: '7px 10px', borderRadius: 8, marginBottom: 1,
+          background: active ? (color ? `${color}18` : 'rgba(99,102,241,0.13)') : 'transparent',
+          color: active ? ac : 'var(--text3)',
+          borderLeft: active ? `2px solid ${ac}` : '2px solid transparent',
+          transition: 'color 0.15s, background 0.15s',
+          cursor: 'pointer', overflow: 'hidden',
+        }}
+      >
+        {/* Cursor-following light blob */}
+        {glare && (
+          <span style={{
+            position: 'absolute',
+            left: glare.x - 40,
+            top: glare.y - 40,
+            width: 80, height: 80,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${ac}30 0%, transparent 70%)`,
+            pointerEvents: 'none',
+            transition: 'opacity 0.1s',
+            zIndex: 0,
+          }} />
+        )}
+        <Icon size={15} style={{ flexShrink: 0, color: active ? ac : 'inherit', position: 'relative', zIndex: 1 }} />
+        {!collapsed && (
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap', position: 'relative', zIndex: 1 }}>
+            {label}
+          </span>
+        )}
       </div>
     </Link>
   );
@@ -168,12 +210,62 @@ function Sidebar({ collapsed, setCollapsed, isReseller }: { collapsed: boolean; 
   );
 }
 
+// ─── Breadcrumbs ──────────────────────────────────────────────────────────────
+const CRUMB_MAP: Record<string, string> = {
+  dashboard: 'Dashboard', endpoints: 'Endpoints', events: 'Events', analytics: 'Analytics',
+  dlq: 'Dead Letter Q', history: 'History', playground: 'Playground', 'api-keys': 'API Keys',
+  transformations: 'Transformations', 'event-types': 'Event Types', 'operational-webhooks': 'Op. Webhooks',
+  'dev-tunnel': 'Dev Tunnel', alerts: 'Alerts', usage: 'Usage', metrics: 'Metrics',
+  portal: 'Portal', workspace: 'Workspace', settings: 'Settings', profile: 'Profile',
+  billing: 'Billing', credits: 'Credits', invoices: 'Invoices', reseller: 'Reseller',
+  admin: 'Admin', users: 'Users', audit: 'Audit Log', health: 'Health',
+};
+
+function Breadcrumbs() {
+  const pathname = usePathname();
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts.length <= 1) return null; // no breadcrumbs on top-level pages
+
+  const crumbs = parts.map((seg, i) => {
+    const href = '/' + parts.slice(0, i + 1).join('/');
+    const label = CRUMB_MAP[seg] || (seg.length > 16 ? seg.slice(-8) + '…' : seg);
+    const isLast = i === parts.length - 1;
+    return { href, label, isLast };
+  });
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 20px', height: 28, borderBottom: '1px solid var(--border)', background: 'var(--bg)' }}>
+      <Link href="/dashboard" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', textDecoration: 'none' }}>Home</Link>
+      {crumbs.map(({ href, label, isLast }) => (
+        <span key={href} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <ChevronRight size={9} color="var(--text3)" />
+          {isLast
+            ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text2)', fontWeight: 600 }}>{label}</span>
+            : <Link href={href} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', textDecoration: 'none' }}>{label}</Link>
+          }
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ─── Notification types ───────────────────────────────────────────────────────
+type SysNotif = { id: string; type: 'alert' | 'dlq' | 'billing' | 'info'; title: string; body: string; time: string; read: boolean; href?: string };
+
+function NotifIcon({ type }: { type: SysNotif['type'] }) {
+  if (type === 'alert')   return <AlertCircle size={13} color="#f87171" />;
+  if (type === 'dlq')     return <AlertTriangle size={13} color="#f59e0b" />;
+  if (type === 'billing') return <CreditCard size={13} color="#4ade80" />;
+  return <Info size={13} color="var(--accent2)" />;
+}
+
 function Topbar({ toggleMobile, onOpenCmd }: { toggleMobile: () => void; onOpenCmd: () => void }) {
   const { user, logout } = useAuthStore();
-  const { notifs, clearAll } = useNotifStore();
+  const { notifs: storeNotifs, clearAll } = useNotifStore();
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUser, setShowUser] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [sysNotifs, setSysNotifs] = useState<SysNotif[]>([]);
   const router = useRouter();
 
   const { data: sub } = useQuery<Subscription>({
@@ -183,9 +275,43 @@ function Topbar({ toggleMobile, onOpenCmd }: { toggleMobile: () => void; onOpenC
     retry: 1,
     throwOnError: false,
   });
+
+  // Fetch DLQ count for notification
+  const { data: dlqData } = useQuery({
+    queryKey: ['dlq-count'],
+    queryFn: () => import('@/lib/api').then(m => m.eventsApi.list('default', { status: 'dead', limit: 1 })),
+    refetchInterval: 60000,
+    retry: 1,
+  });
+
+  // Build system notifications from API data
+  useEffect(() => {
+    const generated: SysNotif[] = [];
+    const dlqCount = (dlqData as any)?.total || 0;
+    if (dlqCount > 0) {
+      generated.push({ id: 'dlq', type: 'dlq', title: 'Dead Letter Queue', body: `${dlqCount} event${dlqCount > 1 ? 's' : ''} in DLQ — needs attention`, time: 'Now', read: false, href: '/dlq' });
+    }
+    if (sub?.status === 'trial' && sub?.daysLeft !== undefined && sub.daysLeft <= 3) {
+      generated.push({ id: 'trial', type: 'billing', title: 'Trial expiring soon', body: `Your trial ends in ${sub.daysLeft} day${sub.daysLeft === 1 ? '' : 's'}. Upgrade to keep access.`, time: 'Now', read: false, href: '/billing' });
+    }
+    if (sub?.status === 'overdue') {
+      generated.push({ id: 'overdue', type: 'billing', title: 'Payment overdue', body: 'Your account has an overdue payment. Update billing to avoid suspension.', time: 'Now', read: false, href: '/billing' });
+    }
+    setSysNotifs(generated);
+  }, [dlqData, sub]);
+
+  const allNotifs = [
+    ...sysNotifs,
+    ...storeNotifs.slice(0, 6).map((n: any, i: number) => ({
+      id: `store-${i}`, type: n.type === 'error' ? 'alert' as const : 'info' as const,
+      title: n.type === 'error' ? 'Error' : n.type === 'success' ? 'Success' : 'Info',
+      body: n.message, time: n.time || '', read: n.read,
+    })),
+  ];
+  const unread = allNotifs.filter(n => !n.read).length;
+
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
-  const unread = notifs.filter((n: any) => !n.read).length;
 
   // Load theme from localStorage on mount
   useEffect(() => {
@@ -210,6 +336,15 @@ function Topbar({ toggleMobile, onOpenCmd }: { toggleMobile: () => void; onOpenC
   const handleLogout = async () => { try { await logout(); } catch {} router.push('/auth/login'); };
   return (
     <header style={{ height: 54, background: 'var(--bg2)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0 }}>
+      {/* Mobile hamburger */}
+      <button
+        onClick={toggleMobile}
+        style={{ display: 'none', padding: 6, borderRadius: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text3)', alignItems: 'center' }}
+        className="mobile-menu-btn"
+      >
+        <Menu size={18} />
+      </button>
+
       <div style={{ flex: 1, maxWidth: 400 }}>
         <button
           onClick={onOpenCmd}
@@ -236,23 +371,69 @@ function Topbar({ toggleMobile, onOpenCmd }: { toggleMobile: () => void; onOpenC
             : <Moon size={16} strokeWidth={1.8} />}
         </button>
         <div ref={notifRef} style={{ position: 'relative' }}>
-          <button onClick={() => setShowNotifs(!showNotifs)} style={{ cursor: 'pointer', padding: 8, borderRadius: 8, background: 'transparent', border: 'none', color: 'var(--text3)', display: 'flex', alignItems: 'center', position: 'relative' }}>
+          <button
+            onClick={() => setShowNotifs(!showNotifs)}
+            style={{ cursor: 'pointer', padding: 8, borderRadius: 8, background: showNotifs ? 'var(--bg3)' : 'transparent', border: 'none', color: 'var(--text3)', display: 'flex', alignItems: 'center', position: 'relative', transition: 'background 0.15s' }}
+          >
             <Bell size={16} />
-            {unread > 0 && <span style={{ position: 'absolute', top: 5, right: 5, width: 7, height: 7, borderRadius: '50%', background: '#f87171', border: '1.5px solid var(--bg2)' }} />}
+            {unread > 0 && (
+              <span style={{ position: 'absolute', top: 4, right: 4, minWidth: 14, height: 14, borderRadius: 7, background: '#f87171', border: '1.5px solid var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#fff', fontWeight: 800, lineHeight: 1 }}>{unread > 9 ? '9+' : unread}</span>
+              </span>
+            )}
           </button>
           {showNotifs && (
-            <div style={{ position: 'absolute', right: 0, top: '100%', width: 300, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200, marginTop: 6 }}>
+            <div style={{ position: 'absolute', right: 0, top: '100%', width: 340, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 14, boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 200, marginTop: 8, overflow: 'hidden' }}>
+              {/* Header */}
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Notifications</span>
-                {notifs.length > 0 && <button onClick={clearAll} style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent2)', background: 'none', border: 'none', cursor: 'pointer' }}>Clear all</button>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Notifications</span>
+                  {unread > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, padding: '1px 7px', borderRadius: 20, background: '#f871711a', color: '#f87171', border: '1px solid #f8717130' }}>{unread} unread</span>}
+                </div>
+                {allNotifs.length > 0 && <button onClick={clearAll} style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent2)', background: 'none', border: 'none', cursor: 'pointer' }}>Clear all</button>}
               </div>
-              {notifs.length === 0 ? <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontFamily: 'var(--font-body)', fontSize: 12 }}>No notifications</div>
-                : notifs.slice(0, 8).map((n: any, i: number) => (
-                  <div key={i} style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, alignItems: 'flex-start', background: n.read ? 'transparent' : 'rgba(99,102,241,0.04)' }}>
-                    <div style={{ marginTop: 1, flexShrink: 0 }}>{n.type === 'success' ? <Check size={13} color="#4ade80" /> : n.type === 'error' ? <AlertCircle size={13} color="#f87171" /> : <Info size={13} color="var(--accent2)" />}</div>
-                    <div><div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text)', fontWeight: n.read ? 400 : 500 }}>{n.message}</div>{n.time && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{n.time}</div>}</div>
+
+              {/* Notification list */}
+              <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                {allNotifs.length === 0 ? (
+                  <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                    <Bell size={24} style={{ color: 'var(--text3)', opacity: 0.3, marginBottom: 8 }} />
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)' }}>You're all caught up!</div>
+                  </div>
+                ) : allNotifs.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => { if (n.href) { router.push(n.href); setShowNotifs(false); } }}
+                    style={{
+                      padding: '11px 16px', borderBottom: '1px solid var(--border)',
+                      display: 'flex', gap: 10, alignItems: 'flex-start',
+                      background: n.read ? 'transparent' : 'rgba(99,102,241,0.04)',
+                      cursor: n.href ? 'pointer' : 'default',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => { if (n.href) (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.08)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = n.read ? 'transparent' : 'rgba(99,102,241,0.04)'; }}
+                  >
+                    <div style={{ marginTop: 1, flexShrink: 0 }}><NotifIcon type={n.type} /></div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text)', fontWeight: n.read ? 400 : 600 }}>{n.title}</span>
+                        {!n.read && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent2)', flexShrink: 0 }} />}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text2)', marginTop: 2, lineHeight: 1.45 }}>{n.body}</div>
+                      {n.time && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginTop: 4 }}>{n.time}</div>}
+                    </div>
+                    {n.href && <ChevronRight size={12} color="var(--text3)" style={{ marginTop: 2, flexShrink: 0 }} />}
                   </div>
                 ))}
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
+                <Link href="/alerts" onClick={() => setShowNotifs(false)} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent2)', textDecoration: 'none' }}>
+                  Manage alert rules →
+                </Link>
+              </div>
             </div>
           )}
         </div>
@@ -333,27 +514,51 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      {mobileOpen && <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40 }} />}
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, backdropFilter: 'blur(2px)' }}
+        />
+      )}
 
       {/* Command Palette */}
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
-      {/* Sidebar — fixed on left */}
-      <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50, width: sidebarW, transition: 'width 0.25s ease' }}>
+      {/* Sidebar — fixed on left (desktop) / slide-in (mobile) */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
+        width: sidebarW, transition: 'width 0.25s ease, transform 0.25s ease',
+      }}
+        className={mobileOpen ? 'sidebar-open' : ''}
+      >
         <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} isReseller={isReseller} />
       </div>
 
       {/* Content — offset by sidebar width, body scrolls */}
-      <div style={{ marginLeft: sidebarW, transition: 'margin-left 0.25s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        {/* Topbar — sticky at top */}
+      <div style={{ marginLeft: sidebarW, transition: 'margin-left 0.25s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}
+        className="main-content"
+      >
+        {/* Topbar + Breadcrumbs — sticky at top */}
         <div style={{ position: 'sticky', top: 0, zIndex: 100 }}>
-          <Topbar toggleMobile={() => setMobileOpen(true)} onOpenCmd={() => setCmdOpen(true)} />
+          <Topbar toggleMobile={() => setMobileOpen(p => !p)} onOpenCmd={() => setCmdOpen(true)} />
+          <Breadcrumbs />
         </div>
         {/* Trial Banner */}
         <TrialBanner />
         {/* Main — NO overflow, body scrolls */}
         <main style={{ flex: 1, padding: '28px 32px' }}>{children}</main>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .sidebar-open { transform: translateX(0) !important; }
+          div[style*="position: fixed"][style*="zIndex: 50"] { transform: translateX(-100%); }
+          .sidebar-open { transform: translateX(0) !important; }
+          .main-content { margin-left: 0 !important; }
+          .mobile-menu-btn { display: flex !important; }
+        }
+      `}</style>
     </div>
   );
 }

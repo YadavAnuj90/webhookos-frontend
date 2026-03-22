@@ -1,9 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { endpointsApi } from '@/lib/api';
 import { MaintenanceWindow } from '@/lib/types';
-import { Globe, Plus, Pause, Play, Trash2, RotateCcw, Copy, ChevronRight, X, Check, ChevronDown, AlertCircle, Shield, Database, Cloud, GitBranch, Lock, Layers, FlaskConical, Settings2, Sparkles } from 'lucide-react';
+import { Globe, Plus, Pause, Play, Trash2, RotateCcw, Copy, ChevronRight, X, Check, ChevronDown, AlertCircle, Shield, Database, Cloud, GitBranch, Lock, Layers, FlaskConical, Settings2, Sparkles, CheckSquare, Square, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -599,6 +599,28 @@ function CreateModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Endpoint Bulk Bar ────────────────────────────────────────────────────────
+function EndpointBulkBar({
+  count, onPause, onResume, onDelete, onClear, loading,
+}: { count: number; onPause: () => void; onResume: () => void; onDelete: () => void; onClear: () => void; loading: boolean }) {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+      background: 'var(--bg2)', border: '1px solid var(--border)',
+      borderRadius: 14, padding: '10px 18px',
+      display: 'flex', alignItems: 'center', gap: 12,
+      boxShadow: '0 8px 40px rgba(0,0,0,0.5)', zIndex: 300, backdropFilter: 'blur(12px)',
+    }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text2)', fontWeight: 600 }}>{count} selected</span>
+      <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
+      <button className="btn btn-ghost btn-sm" onClick={onPause} disabled={loading}><Pause size={12} />Pause All</button>
+      <button className="btn btn-ghost btn-sm" onClick={onResume} disabled={loading}><Play size={12} />Resume All</button>
+      <button className="btn btn-ghost btn-sm" onClick={onDelete} disabled={loading} style={{ color: 'var(--red)' }}><Trash2 size={12} />Delete All</button>
+      <button className="btn btn-ghost btn-sm" onClick={onClear} style={{ color: 'var(--text3)' }}><X size={12} />Deselect</button>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function EndpointsPage() {
   const qc = useQueryClient();
@@ -610,6 +632,9 @@ export default function EndpointsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [rotateResult, setRotateResult] = useState<{ secret: string; publicKey?: string } | null>(null);
 
+  // Bulk select state
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
   const { data, isLoading } = useQuery({
     queryKey: ['endpoints', page, statusFilter],
     queryFn: () => endpointsApi.list(PID, { page, limit: 15, status: statusFilter || undefined }),
@@ -618,6 +643,10 @@ export default function EndpointsPage() {
   const pause  = useMutation({ mutationFn: (id: string) => endpointsApi.pause(PID, id),  onSuccess: () => { toast.success('Paused');  qc.invalidateQueries({ queryKey: ['endpoints'] }); } });
   const resume = useMutation({ mutationFn: (id: string) => endpointsApi.resume(PID, id), onSuccess: () => { toast.success('Resumed'); qc.invalidateQueries({ queryKey: ['endpoints'] }); } });
   const del    = useMutation({ mutationFn: (id: string) => endpointsApi.delete(PID, id), onSuccess: () => { toast.success('Deleted'); qc.invalidateQueries({ queryKey: ['endpoints'] }); } });
+
+  const bulkPause  = useMutation({ mutationFn: async (ids: string[]) => Promise.all(ids.map(id => endpointsApi.pause(PID, id))),  onSuccess: () => { toast.success(`${selected.size} paused`);  setSelected(new Set()); qc.invalidateQueries({ queryKey: ['endpoints'] }); } });
+  const bulkResume = useMutation({ mutationFn: async (ids: string[]) => Promise.all(ids.map(id => endpointsApi.resume(PID, id))), onSuccess: () => { toast.success(`${selected.size} resumed`); setSelected(new Set()); qc.invalidateQueries({ queryKey: ['endpoints'] }); } });
+  const bulkDelete = useMutation({ mutationFn: async (ids: string[]) => Promise.all(ids.map(id => endpointsApi.delete(PID, id))), onSuccess: () => { toast.success(`${selected.size} deleted`); setSelected(new Set()); qc.invalidateQueries({ queryKey: ['endpoints'] }); } });
 
   const rotate = useMutation({
     mutationFn: (id: string) => endpointsApi.rotateSecret(PID, id),
@@ -630,12 +659,27 @@ export default function EndpointsPage() {
 
   const copySecret = (secret: string) => { navigator.clipboard.writeText(secret); toast.success('Secret copied'); };
 
+  const endpoints: any[] = data?.endpoints || [];
+  const allIds = endpoints.map((ep: any) => ep._id);
+  const allSelected = allIds.length > 0 && allIds.every((id: string) => selected.has(id));
+
+  const toggleAll = useCallback(() => {
+    allSelected ? setSelected(new Set()) : setSelected(new Set(allIds));
+  }, [allSelected, allIds]);
+
+  const toggleOne = useCallback((id: string) => {
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }, []);
+
+  const bulkLoading = bulkPause.isPending || bulkResume.isPending || bulkDelete.isPending;
+  const selectedArr = Array.from(selected);
+
   return (
     <div className="page">
       <div className="ph">
         <div className="ph-left"><h1>Endpoints</h1><p>// Webhook delivery targets · {data?.total || 0} total</p></div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <select className="input" style={{ width: 130 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <select className="input" style={{ width: 130 }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setSelected(new Set()); }}>
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="paused">Paused</option>
@@ -655,8 +699,8 @@ export default function EndpointsPage() {
       <div className="tbl-wrap">
         {isLoading ? (
           <table className="tbl">
-            <thead><tr><th>Name</th><th>URL / Dest</th><th>Status</th><th>Event Types</th><th>Success / Fail</th><th>Actions</th></tr></thead>
-            <SkeletonTable rows={6} cols={6} />
+            <thead><tr><th style={{width:36}}></th><th>Name</th><th>URL / Dest</th><th>Status</th><th>Event Types</th><th>Success / Fail</th><th>Actions</th></tr></thead>
+            <SkeletonTable rows={6} cols={7} />
           </table>
         ) : !data?.endpoints?.length ? (
           <Empty type="endpoints" title="No endpoints yet" sub="Create your first endpoint to start receiving webhooks."
@@ -664,54 +708,70 @@ export default function EndpointsPage() {
           />
         ) : (
           <table className="tbl">
-            <thead><tr><th>Name</th><th>URL / Dest</th><th>Status</th><th>Event Types</th><th>Success / Fail</th><th>Actions</th></tr></thead>
+            <thead><tr>
+              <th style={{ width: 36 }}>
+                <button onClick={toggleAll} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text3)' }}>
+                  {allSelected ? <CheckSquare size={14} color="var(--accent2)" /> : <Square size={14} />}
+                </button>
+              </th>
+              <th>Name</th><th>URL / Dest</th><th>Status</th><th>Event Types</th><th>Success / Fail</th><th>Actions</th>
+            </tr></thead>
             <tbody>
-              {data.endpoints.map((ep: any) => (
-                <tr key={ep._id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/endpoints/${ep._id}`)}>
-                  <td>
-                    <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 12.5 }}>{ep.name}</div>
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)' }}>ID: {ep._id?.slice(-8)}</span>
-                      {ep.signatureScheme === 'ed25519' && <span className="badge b-accent" style={{ fontSize: 8 }}>Ed25519</span>}
-                      {ep.endpointType && ep.endpointType !== 'http' && <span className="badge b-gray" style={{ fontSize: 8 }}>{ep.endpointType.toUpperCase()}</span>}
-                      {ep.batchingEnabled && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(99,102,241,.12)', color: 'var(--accent2)', border: '1px solid rgba(99,102,241,.2)' }}>BATCHING</span>}
-                      {ep.canaryPercent > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(245,158,11,.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,.2)' }}>CANARY {ep.canaryPercent}%</span>}
-                      {ep.piiFields?.length > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(168,85,247,.12)', color: '#a78bfa', border: '1px solid rgba(168,85,247,.2)' }}>PII</span>}
-                      {ep.shadowUrl && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.2)' }}>SHADOW</span>}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text2)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {ep.url || ep.storageConfig?.bucket || '—'}
-                    </div>
-                  </td>
-                  <td><StatusBadge status={ep.status} /></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {ep.eventTypes?.length ? ep.eventTypes.slice(0, 3).map((t: string) => <span key={t} className="badge b-accent">{t}</span>) : <span className="badge b-gray">all</span>}
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>
-                      <span style={{ color: 'var(--green)' }}>{ep.totalDelivered || 0}</span>
-                      {' / '}
-                      <span style={{ color: 'var(--red)' }}>{ep.totalFailed || 0}</span>
-                    </span>
-                  </td>
-                  <td onClick={e => e.stopPropagation()}>
-                    <div style={{ display: 'flex', gap: 5 }}>
-                      {ep.status === 'active'
-                        ? <button className="btn-icon btn-sm" title="Pause"  onClick={() => pause.mutate(ep._id)}><Pause size={11} /></button>
-                        : <button className="btn-icon btn-sm" title="Resume" onClick={() => resume.mutate(ep._id)}><Play size={11} /></button>}
-                      <button className="btn-icon btn-sm" title="Rotate secret" onClick={() => rotate.mutate(ep._id)}><RotateCcw size={11} /></button>
-                      {ep.secret && <button className="btn-icon btn-sm" title="Copy secret" onClick={() => copySecret(ep.secret)}><Copy size={11} /></button>}
-                      <button className="btn-icon btn-sm" style={{ color: '#a855f7', borderColor: 'rgba(168,85,247,.3)' }} title="AI Debug this endpoint" onClick={() => { setAiDebugEndpointId(ep._id); setShowAiDebug(true); }}><Sparkles size={11} /></button>
-                      <button className="btn-icon btn-sm" style={{ color: 'var(--red)', borderColor: 'var(--rbd)' }} title="Delete" onClick={() => { if (confirm(`Delete "${ep.name}"?`)) del.mutate(ep._id); }}><Trash2 size={11} /></button>
-                      <button className="btn-icon btn-sm" title="View detail" onClick={() => router.push(`/endpoints/${ep._id}`)}><ChevronRight size={12} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {data.endpoints.map((ep: any) => {
+                const isSelected = selected.has(ep._id);
+                return (
+                  <tr key={ep._id} style={{ cursor: 'pointer', background: isSelected ? 'rgba(99,102,241,0.06)' : undefined }} onClick={() => router.push(`/endpoints/${ep._id}`)}>
+                    <td onClick={e => e.stopPropagation()}>
+                      <button onClick={() => toggleOne(ep._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text3)' }}>
+                        {isSelected ? <CheckSquare size={14} color="var(--accent2)" /> : <Square size={14} />}
+                      </button>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 12.5 }}>{ep.name}</div>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)' }}>ID: {ep._id?.slice(-8)}</span>
+                        {ep.signatureScheme === 'ed25519' && <span className="badge b-accent" style={{ fontSize: 8 }}>Ed25519</span>}
+                        {ep.endpointType && ep.endpointType !== 'http' && <span className="badge b-gray" style={{ fontSize: 8 }}>{ep.endpointType.toUpperCase()}</span>}
+                        {ep.batchingEnabled && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(99,102,241,.12)', color: 'var(--accent2)', border: '1px solid rgba(99,102,241,.2)' }}>BATCHING</span>}
+                        {ep.canaryPercent > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(245,158,11,.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,.2)' }}>CANARY {ep.canaryPercent}%</span>}
+                        {ep.piiFields?.length > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(168,85,247,.12)', color: '#a78bfa', border: '1px solid rgba(168,85,247,.2)' }}>PII</span>}
+                        {ep.shadowUrl && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, padding: '1px 5px', borderRadius: 4, background: 'rgba(34,211,238,.1)', color: '#22d3ee', border: '1px solid rgba(34,211,238,.2)' }}>SHADOW</span>}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text2)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ep.url || ep.storageConfig?.bucket || '—'}
+                      </div>
+                    </td>
+                    <td><StatusBadge status={ep.status} /></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                        {ep.eventTypes?.length ? ep.eventTypes.slice(0, 3).map((t: string) => <span key={t} className="badge b-accent">{t}</span>) : <span className="badge b-gray">all</span>}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+                        <span style={{ color: 'var(--green)' }}>{ep.totalDelivered || 0}</span>
+                        {' / '}
+                        <span style={{ color: 'var(--red)' }}>{ep.totalFailed || 0}</span>
+                      </span>
+                    </td>
+                    <td onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: 5 }}>
+                        {ep.status === 'active'
+                          ? <button className="btn-icon btn-sm" title="Pause"  onClick={() => pause.mutate(ep._id)}><Pause size={11} /></button>
+                          : <button className="btn-icon btn-sm" title="Resume" onClick={() => resume.mutate(ep._id)}><Play size={11} /></button>}
+                        <button className="btn-icon btn-sm" title="Rotate secret" onClick={() => rotate.mutate(ep._id)}><RotateCcw size={11} /></button>
+                        {ep.secret && <button className="btn-icon btn-sm" title="Copy secret" onClick={() => copySecret(ep.secret)}><Copy size={11} /></button>}
+                        <button className="btn-icon btn-sm" style={{ color: '#a855f7', borderColor: 'rgba(168,85,247,.3)' }} title="AI Debug this endpoint" onClick={() => { setAiDebugEndpointId(ep._id); setShowAiDebug(true); }}><Sparkles size={11} /></button>
+                        <button className="btn-icon btn-sm" style={{ color: 'var(--red)', borderColor: 'var(--rbd)' }} title="Delete" onClick={() => { if (confirm(`Delete "${ep.name}"?`)) del.mutate(ep._id); }}><Trash2 size={11} /></button>
+                        <button className="btn-icon btn-sm" title="Health" onClick={() => router.push(`/endpoints/${ep._id}/health`)} style={{ color: '#4ade80', borderColor: 'rgba(74,222,128,.3)' }}><Activity size={11} /></button>
+                        <button className="btn-icon btn-sm" title="View detail" onClick={() => router.push(`/endpoints/${ep._id}`)}><ChevronRight size={12} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -724,6 +784,18 @@ export default function EndpointsPage() {
           </div>
         )}
       </div>
+
+      {/* Bulk Bar */}
+      {selected.size > 0 && (
+        <EndpointBulkBar
+          count={selected.size}
+          loading={bulkLoading}
+          onPause={() => bulkPause.mutate(selectedArr)}
+          onResume={() => bulkResume.mutate(selectedArr)}
+          onDelete={() => { if (confirm(`Delete ${selected.size} endpoint(s)?`)) bulkDelete.mutate(selectedArr); }}
+          onClear={() => setSelected(new Set())}
+        />
+      )}
 
       {showCreate && <CreateModal onClose={() => setShowCreate(false)} />}
       {showAiDebug && <AiDebuggerModal onClose={() => setShowAiDebug(false)} prefilledEndpointId={aiDebugEndpointId} />}
