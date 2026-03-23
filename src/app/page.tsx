@@ -1297,6 +1297,296 @@ function Features() {
   );
 }
 
+// ─── LIVE DEMO ───────────────────────────────────────────────────────────────
+const DEMO_EVENTS = [
+  {
+    label: '💳  payment.success',
+    type: 'payment.success',
+    payload: { id: 'evt_8Kx2mNpQ', type: 'payment.success', amount: 4900, currency: 'usd', customer: 'cus_MnP8qR2x', status: 'succeeded' },
+  },
+  {
+    label: '📦  order.created',
+    type: 'order.created',
+    payload: { id: 'evt_9Lm4pRxK', type: 'order.created', order_id: 'ord_7Yx3nK9m', items: 3, total: 12750, currency: 'usd' },
+  },
+  {
+    label: '👤  user.signup',
+    type: 'user.signup',
+    payload: { id: 'evt_3Pq7rMsN', type: 'user.signup', user_id: 'usr_4Kn8mPxQ', email: 'dev@acme.com', plan: 'pro' },
+  },
+  {
+    label: '🔔  subscription.cancelled',
+    type: 'subscription.cancelled',
+    payload: { id: 'evt_5Xq2nLpR', type: 'subscription.cancelled', sub_id: 'sub_9Km3pNqX', reason: 'user_cancelled', at_period_end: true },
+  },
+];
+
+type LogLine = { text: string; color: string; icon: string };
+
+function JsonLine({ k, v }: { k: string; v: unknown }) {
+  const isStr = typeof v === 'string';
+  const isNum = typeof v === 'number';
+  const isBool = typeof v === 'boolean';
+  const color = isNum ? '#fb923c' : isBool ? '#f87171' : '#4ade80';
+  return (
+    <div style={{ paddingLeft: 16, lineHeight: 1.9 }}>
+      <span style={{ color: '#818cf8' }}>&quot;{k}&quot;</span>
+      <span style={{ color: '#475569' }}>: </span>
+      <span style={{ color }}>{isStr ? `"${v}"` : String(v)}</span>
+      <span style={{ color: '#2d3f55' }}>,</span>
+    </div>
+  );
+}
+
+function LiveDemo() {
+  const [sel, setSel] = useState(0);
+  const [firing, setFiring] = useState(false);
+  const [logs, setLogs] = useState<LogLine[]>([]);
+  const [done, setDone] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const termRef = useRef<HTMLDivElement>(null);
+
+  const event = DEMO_EVENTS[sel];
+
+  const fire = () => {
+    if (firing) return;
+    setFiring(true);
+    setDone(false);
+    setLogs([]);
+    const count = attempts + 1;
+    setAttempts(count);
+
+    const lat = 24 + Math.floor(Math.random() * 58);
+    const sig = `sha256=${Array.from({ length: 12 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}...`;
+
+    const steps: { delay: number; line: LogLine }[] = [
+      { delay: 0,    line: { icon: '→', text: `Event received  [${event.type}]`, color: '#94a3b8' } },
+      { delay: 280,  line: { icon: '⏳', text: 'Queued for delivery', color: '#818cf8' } },
+      { delay: 600,  line: { icon: '🔐', text: `HMAC-SHA256 signed  ${sig}`, color: '#a78bfa' } },
+      { delay: 960,  line: { icon: '→', text: 'POST https://demo.webhookos.dev/hooks', color: '#38bdf8' } },
+      { delay: 1300 + lat, line: { icon: '←', text: `HTTP 200 OK  (${lat}ms)`, color: '#4ade80' } },
+      { delay: 1600 + lat, line: { icon: '✓', text: `Delivered in ${lat + 18}ms  ·  attempt #${count}`, color: '#4ade80' } },
+    ];
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    steps.forEach(({ delay, line }) => {
+      timers.push(setTimeout(() => {
+        setLogs(p => [...p, line]);
+        if (line.icon === '✓') { setDone(true); setFiring(false); }
+      }, delay));
+    });
+    // auto-scroll terminal
+    timers.push(setTimeout(() => {
+      termRef.current?.scrollTo({ top: 999, behavior: 'smooth' });
+    }, 1700 + lat));
+  };
+
+  const reset = () => { setSel(s => s); setLogs([]); setDone(false); };
+
+  return (
+    <section id="live-demo" style={{ padding: '88px 0 72px' }}>
+      <div className="lp-wrap">
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <span className="lp-sec-label">// TRY IT LIVE</span>
+            <h2 className="lp-sec-title" style={{ margin: '0 auto 14px' }}>
+              Fire a webhook.<br /><span className="lp-grad-text">Watch it deliver.</span>
+            </h2>
+            <p className="lp-sec-sub" style={{ margin: '0 auto' }}>
+              No signup needed. Pick an event, hit fire, and see every step — signing, routing, delivery — happen in real time.
+            </p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={100}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0,
+            background: 'rgba(8,13,28,.85)', border: '1px solid rgba(99,102,241,.18)',
+            borderRadius: 22, overflow: 'hidden', backdropFilter: 'blur(20px)',
+            boxShadow: '0 48px 96px rgba(0,0,0,.55), 0 0 0 1px rgba(99,102,241,.07), inset 0 1px 0 rgba(255,255,255,.04)',
+          }} className="lp-demo-grid">
+
+            {/* ── LEFT: Composer ── */}
+            <div style={{ padding: '36px 32px', borderRight: '1px solid rgba(99,102,241,.09)', display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+              {/* window chrome */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                {['#f87171','#f59e0b','#4ade80'].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c, opacity: .65 }} />)}
+                <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9.5, color: '#1e3a5f', marginLeft: 10, letterSpacing: '.05em' }}>webhook-composer</span>
+              </div>
+
+              {/* event type pills */}
+              <div>
+                <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9.5, color: '#334155', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 10 }}>Event Type</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                  {DEMO_EVENTS.map((e, i) => (
+                    <button key={i} onClick={() => { setSel(i); reset(); }} style={{
+                      padding: '6px 13px', borderRadius: 9, fontFamily: 'JetBrains Mono,monospace', fontSize: 10.5,
+                      cursor: 'pointer', transition: 'all .2s', border: 'none', outline: 'none',
+                      background: sel === i ? 'rgba(99,102,241,.18)' : 'rgba(255,255,255,.03)',
+                      border: `1px solid ${sel === i ? 'rgba(99,102,241,.45)' : 'rgba(255,255,255,.06)'}` as any,
+                      color: sel === i ? '#a5b4fc' : '#334155',
+                      boxShadow: sel === i ? '0 0 16px rgba(99,102,241,.12)' : 'none',
+                    }}>{e.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* payload preview */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9.5, color: '#334155', textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 10 }}>Payload Preview</div>
+                <div style={{
+                  background: 'rgba(0,0,0,.45)', border: '1px solid rgba(99,102,241,.1)',
+                  borderRadius: 13, padding: '16px 14px', fontFamily: 'JetBrains Mono,monospace', fontSize: 11.5, lineHeight: 1,
+                }}>
+                  {/* top accent */}
+                  <div style={{ height: 2, background: 'linear-gradient(90deg,#6366f1,#a855f7)', borderRadius: 2, marginBottom: 14, opacity: .7 }} />
+                  <div style={{ color: '#2d3f55' }}>{'{'}</div>
+                  {Object.entries(event.payload).map(([k, v]) => <JsonLine key={k} k={k} v={v} />)}
+                  <div style={{ color: '#2d3f55' }}>{'}'}</div>
+                </div>
+              </div>
+
+              {/* endpoint row */}
+              <div style={{ background: 'rgba(0,0,0,.3)', borderRadius: 10, padding: '10px 14px', border: '1px solid rgba(56,189,248,.1)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', animation: 'lp-dot-blink 1.4s ease infinite', flexShrink: 0 }} />
+                <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10.5, color: '#38bdf8', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>https://demo.webhookos.dev/hooks</span>
+                <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: '#334155', background: 'rgba(74,222,128,.07)', border: '1px solid rgba(74,222,128,.15)', borderRadius: 5, padding: '2px 8px', whiteSpace: 'nowrap' }}>ACTIVE</span>
+              </div>
+
+              {/* fire button */}
+              <button
+                onClick={fire}
+                disabled={firing}
+                className="lp-magnetic"
+                style={{
+                  width: '100%', padding: '14px 0', borderRadius: 12, border: 'none',
+                  background: firing ? 'rgba(99,102,241,.3)' : done ? 'linear-gradient(135deg,#059669,#10b981)' : 'linear-gradient(135deg,#4f46e5,#7c3aed)',
+                  color: '#fff', fontFamily: 'Inter,sans-serif', fontWeight: 800, fontSize: 14.5,
+                  cursor: firing ? 'wait' : 'pointer', transition: 'all .3s',
+                  boxShadow: firing ? 'none' : done ? '0 8px 28px rgba(16,185,129,.35)' : '0 8px 28px rgba(79,70,229,.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+                  position: 'relative', overflow: 'hidden',
+                }}
+              >
+                {/* shimmer */}
+                {!firing && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg,transparent 40%,rgba(255,255,255,.12) 50%,transparent 60%)', backgroundSize: '200%', animation: 'lp-shimmer 2.2s infinite' }} />}
+                <span style={{ position: 'relative', zIndex: 1 }}>
+                  {firing ? '⟳  Delivering…' : done ? '↺  Fire Again' : '⚡  Fire Webhook'}
+                </span>
+                {!firing && <ArrowRight size={16} style={{ position: 'relative', zIndex: 1 }} />}
+              </button>
+
+              {/* stats row */}
+              {attempts > 0 && (
+                <div style={{ display: 'flex', gap: 12, animation: 'lp-up .4s ease both' }}>
+                  {[{ label: 'Events fired', val: attempts }, { label: 'Success rate', val: '100%' }, { label: 'Avg latency', val: '42ms' }].map(({ label, val }) => (
+                    <div key={label} style={{ flex: 1, textAlign: 'center', padding: '9px 6px', borderRadius: 10, background: 'rgba(99,102,241,.06)', border: '1px solid rgba(99,102,241,.1)' }}>
+                      <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 15, fontWeight: 900, color: '#818cf8' }}>{val}</div>
+                      <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8.5, color: '#334155', marginTop: 3, letterSpacing: '.04em', textTransform: 'uppercase' }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── RIGHT: Terminal ── */}
+            <div style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                {['#f87171','#f59e0b','#4ade80'].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: '50%', background: c, opacity: .65 }} />)}
+                <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9.5, color: '#1e3a5f', marginLeft: 10, letterSpacing: '.05em' }}>delivery-trace — live</span>
+                {firing && (
+                  <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', animation: 'lp-dot-blink .6s ease infinite' }} />
+                    <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: '#f59e0b' }}>LIVE</span>
+                  </div>
+                )}
+                {done && (
+                  <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80' }} />
+                    <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9, color: '#4ade80' }}>DONE</span>
+                  </div>
+                )}
+              </div>
+
+              {/* terminal body */}
+              <div ref={termRef} style={{
+                flex: 1, background: 'rgba(0,0,0,.5)', borderRadius: 14,
+                border: '1px solid rgba(99,102,241,.1)', padding: '20px 18px',
+                fontFamily: 'JetBrains Mono,monospace', fontSize: 11.5,
+                overflowY: 'auto', minHeight: 300, maxHeight: 360,
+                display: 'flex', flexDirection: 'column', gap: 0,
+                scrollbarWidth: 'none',
+              }}>
+                {logs.length === 0 && (
+                  <div style={{ color: '#1e3a5f', fontSize: 11, display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <span style={{ color: '#2d3f55' }}>$</span>
+                    <span>waiting for event</span>
+                    <span style={{ animation: 'lp-cursor .85s ease infinite', display: 'inline-block', width: 7, height: 13, background: '#1e3a5f', borderRadius: 1, verticalAlign: 'middle' }} />
+                  </div>
+                )}
+                {logs.map((l, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, padding: '4px 0', animation: 'lp-event .3s ease both', borderBottom: i < logs.length - 1 ? '1px solid rgba(255,255,255,.02)' : 'none' }}>
+                    <span style={{ color: '#1e3a5f', userSelect: 'none', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
+                    <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>{l.icon}</span>
+                    <span style={{ color: l.color, lineHeight: 1.7, wordBreak: 'break-all' }}>{l.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* success card */}
+              {done && (
+                <div style={{
+                  padding: '16px 18px', borderRadius: 13,
+                  background: 'linear-gradient(135deg,rgba(74,222,128,.08),rgba(16,185,129,.04))',
+                  border: '1px solid rgba(74,222,128,.22)',
+                  animation: 'lp-up .45s ease both',
+                  display: 'flex', alignItems: 'center', gap: 14,
+                }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(74,222,128,.12)', border: '1px solid rgba(74,222,128,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>✅</div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 13, color: '#4ade80', marginBottom: 3 }}>Delivery successful</div>
+                    <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 9.5, color: '#334155', lineHeight: 1.6 }}>HMAC verified · Zero message loss · Retries ready</div>
+                  </div>
+                  <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 11, color: '#4ade80', fontWeight: 700 }}>5-nines</div>
+                    <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8.5, color: '#1e3a5f' }}>reliability</div>
+                  </div>
+                </div>
+              )}
+
+              {/* delivery pipeline steps */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+                {[
+                  { label: 'Receive', color: logs.length >= 1 ? '#818cf8' : '#1e293b', done: logs.length >= 1 },
+                  { label: 'Sign',    color: logs.length >= 3 ? '#a78bfa' : '#1e293b', done: logs.length >= 3 },
+                  { label: 'Deliver', color: logs.length >= 4 ? '#38bdf8' : '#1e293b', done: logs.length >= 4 },
+                  { label: 'Confirm', color: logs.length >= 6 ? '#4ade80' : '#1e293b', done: logs.length >= 6 },
+                ].map(({ label, color, done: stepDone }) => (
+                  <div key={label} style={{
+                    textAlign: 'center', padding: '8px 4px', borderRadius: 9,
+                    background: stepDone ? 'rgba(99,102,241,.07)' : 'rgba(0,0,0,.2)',
+                    border: `1px solid ${stepDone ? color + '44' : 'rgba(255,255,255,.03)'}`,
+                    transition: 'all .4s ease',
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, margin: '0 auto 5px', boxShadow: stepDone ? `0 0 10px ${color}` : 'none', transition: 'all .4s ease' }} />
+                    <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 8.5, color: stepDone ? color : '#1e293b', transition: 'color .4s', letterSpacing: '.04em' }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+
+      <style>{`
+        @media(max-width:860px){.lp-demo-grid{grid-template-columns:1fr!important}}
+      `}</style>
+    </section>
+  );
+}
+
 // ─── CODE SECTION ────────────────────────────────────────────────────────────
 function CodeSection() {
   return (
@@ -1663,6 +1953,7 @@ export default function LandingPage() {
         <TickerBar />
         <Stats />
         <BentoFeatures />
+        <LiveDemo />
         <CodeSection />
         <FlowSection />
         <AiSection />

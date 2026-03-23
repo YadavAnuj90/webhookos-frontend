@@ -223,7 +223,7 @@ function SubscriptionsModal({ token, onClose }: { token: any; onClose: () => voi
   useEffect(() => {
     eventTypesApi.list(token.projectId || 'default')
       .then((r: any) => setEts(Array.isArray(r) ? r : (r?.eventTypes || [])))
-      .catch(() => {});
+      .catch(() => { toast.error('Could not load event types'); });
   }, [token.projectId]);
 
   const toggle = (name: string) =>

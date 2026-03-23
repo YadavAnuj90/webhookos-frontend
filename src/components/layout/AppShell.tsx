@@ -65,7 +65,7 @@ function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   useEffect(() => {
-    workspacesApi.list().then(d => { const arr = Array.isArray(d) ? d : []; setWorkspaces(arr); if (arr[0] && !active) setActive(arr[0]); }).catch(() => {});
+    workspacesApi.list().then(d => { const arr = Array.isArray(d) ? d : []; setWorkspaces(arr); if (arr[0] && !active) setActive(arr[0]); }).catch(() => { toast.error('Could not load workspaces'); });
   }, []);
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
