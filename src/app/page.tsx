@@ -813,7 +813,7 @@ function TiltCard({ children }: { children: React.ReactNode }) {
   return (
     <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave}
       style={{ transform: `perspective(900px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`, transition: 'transform .12s ease', position: 'relative' }}>
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 14, background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,.055) 0%, transparent 65%)`, pointerEvents: 'none', zIndex: 10, borderRadius: 14 }} />
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 14, background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,.055) 0%, transparent 65%)`, pointerEvents: 'none', zIndex: 10 }} />
       {children}
     </div>
   );
@@ -1422,7 +1422,7 @@ function LiveDemo() {
                   {DEMO_EVENTS.map((e, i) => (
                     <button key={i} onClick={() => { setSel(i); reset(); }} style={{
                       padding: '6px 13px', borderRadius: 9, fontFamily: 'JetBrains Mono,monospace', fontSize: 10.5,
-                      cursor: 'pointer', transition: 'all .2s', border: 'none', outline: 'none',
+                      cursor: 'pointer', transition: 'all .2s', outline: 'none',
                       background: sel === i ? 'rgba(99,102,241,.18)' : 'rgba(255,255,255,.03)',
                       border: `1px solid ${sel === i ? 'rgba(99,102,241,.45)' : 'rgba(255,255,255,.06)'}` as any,
                       color: sel === i ? '#a5b4fc' : '#334155',
@@ -1593,10 +1593,11 @@ function CodeSection() {
     <section style={{ padding: '80px 0', background: 'rgba(5,10,22,.7)' }}>
       <div className="lp-wrap">
         <div className="lp-code-flex" style={{ display: 'flex', alignItems: 'center', gap: 60 }}>
-          <Reveal style={{ flex: 1, minWidth: 0 }}>
-            <span className="lp-sec-label">// DEVELOPER EXPERIENCE</span>
-            <h2 className="lp-sec-title">Ship in any language,<br /><span className="lp-grad-text">in minutes.</span></h2>
-            <p className="lp-sec-sub" style={{ marginBottom: 28 }}>Official SDKs for every major language. One API call is all it takes — we handle signing, retries, DLQ, and observability automatically.</p>
+          <Reveal className="lp-code-left">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span className="lp-sec-label">// DEVELOPER EXPERIENCE</span>
+              <h2 className="lp-sec-title">Ship in any language,<br /><span className="lp-grad-text">in minutes.</span></h2>
+              <p className="lp-sec-sub" style={{ marginBottom: 28 }}>Official SDKs for every major language. One API call is all it takes — we handle signing, retries, DLQ, and observability automatically.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
                 { icon: '📦', text: 'Official SDKs: Node.js, Python, Go, PHP, Ruby' },
@@ -1608,6 +1609,7 @@ function CodeSection() {
                 </div>
               ))}
             </div>
+          </div>
           </Reveal>
           <div style={{ flex: 1, minWidth: 0, maxWidth: 520 }}>
             <Reveal delay={120}><CodeTabs /></Reveal>
@@ -1627,27 +1629,29 @@ function FlowSection() {
           <div style={{ flex: 1, minWidth: 0, maxWidth: 520 }}>
             <Reveal><WebhookFlowDiagram /></Reveal>
           </div>
-          <Reveal delay={100} style={{ flex: 1, minWidth: 0 }}>
-            <span className="lp-sec-label">// HOW DELIVERY WORKS</span>
-            <h2 className="lp-sec-title">From event to endpoint,<br /><span className="lp-grad-text">guaranteed.</span></h2>
-            <p className="lp-sec-sub" style={{ marginBottom: 28 }}>Every event you fire travels through a hardened pipeline — signed, queued, delivered, verified, and automatically retried if anything goes wrong.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[
-                { step: '01', title: 'Sign', desc: 'Payload HMAC-SHA256 signed with your secret key', color: '#4ade80' },
-                { step: '02', title: 'Queue & Dispatch', desc: 'WebhookOS durably queues and fires to your endpoint', color: '#818cf8' },
-                { step: '03', title: 'Verify & Retry', desc: '5-layer exponential backoff on failures, DLQ for persistents', color: '#38bdf8' },
-                { step: '04', title: 'Observe', desc: 'Full delivery log, latency, and AI triage in real time', color: '#fb923c' },
-              ].map(({ step, title, desc, color }) => (
-                <div key={step} style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: `${color}16`, border: `1px solid ${color}32`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color, fontWeight: 700 }}>{step}</div>
-                  <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#f1f5f9', marginBottom: 2 }}>{title}</div>
-                    <div style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.6 }}>{desc}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Reveal delay={100}>
+              <span className="lp-sec-label">// HOW DELIVERY WORKS</span>
+              <h2 className="lp-sec-title">From event to endpoint,<br /><span className="lp-grad-text">guaranteed.</span></h2>
+              <p className="lp-sec-sub" style={{ marginBottom: 28 }}>Every event you fire travels through a hardened pipeline — signed, queued, delivered, verified, and automatically retried if anything goes wrong.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  { step: '01', title: 'Sign', desc: 'Payload HMAC-SHA256 signed with your secret key', color: '#4ade80' },
+                  { step: '02', title: 'Queue & Dispatch', desc: 'WebhookOS durably queues and fires to your endpoint', color: '#818cf8' },
+                  { step: '03', title: 'Verify & Retry', desc: '5-layer exponential backoff on failures, DLQ for persistents', color: '#38bdf8' },
+                  { step: '04', title: 'Observe', desc: 'Full delivery log, latency, and AI triage in real time', color: '#fb923c' },
+                ].map(({ step, title, desc, color }) => (
+                  <div key={step} style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `${color}16`, border: `1px solid ${color}32`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color, fontWeight: 700 }}>{step}</div>
+                    <div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#f1f5f9', marginBottom: 2 }}>{title}</div>
+                      <div style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.6 }}>{desc}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </Reveal>
+                ))}
+              </div>
+            </Reveal>
+          </div>
         </div>
       </div>
     </section>
