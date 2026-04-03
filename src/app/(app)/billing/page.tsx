@@ -101,21 +101,33 @@ export default function BillingPage() {
     else if (reason === 'account_suspended') toast.error('Your account has been suspended. Please contact support.');
   }, [reason]);
 
-  const { data: sub, isLoading: subLoading } = useQuery<Subscription>({
+  const { data: sub, isLoading: subLoading } = useQuery<Subscription | null>({
     queryKey: ['subscription'],
-    queryFn: () => billingApi.getSubscription(),
+    // Normalize: if API returns an error-shaped 200 ({message,error,statusCode}), treat as null.
+    queryFn: () => billingApi.getSubscription().then((d: any) => {
+      if (!d || typeof d !== 'object') return null;
+      if ('statusCode' in d || 'error' in d) return null;
+      return d as Subscription;
+    }),
+    throwOnError: false,
   });
 
-  const { data: trial } = useQuery<TrialInfo>({
+  const { data: trial } = useQuery<TrialInfo | null>({
     queryKey: ['trial-status'],
-    queryFn: () => billingApi.getTrial(),
+    queryFn: () => billingApi.getTrial().then((d: any) => {
+      if (!d || typeof d !== 'object') return null;
+      if ('statusCode' in d || 'error' in d) return null;
+      return d as TrialInfo;
+    }),
     retry: 1, throwOnError: false,
   });
 
   const { data: plans } = useQuery<BillingPlan[]>({
     queryKey: ['billing-plans'],
-    queryFn: () => billingApi.getPlans(),
+    // Normalize: always return an array — never an error-shaped object.
+    queryFn: () => billingApi.getPlans().then((d: any) => Array.isArray(d) ? d : []),
     staleTime: 10 * 60 * 1000,
+    throwOnError: false,
   });
 
   const upgradeOrder = useMutation({

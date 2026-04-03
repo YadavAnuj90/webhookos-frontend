@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { apiKeysApi } from '@/lib/api';
 import { Key, Plus, Copy, Check, Trash2, Ban, Clock, Activity, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { SkeletonTable } from '@/components/ui/Skeleton';
@@ -15,19 +16,19 @@ export default function ApiKeysPage() {
   const [form, setForm] = useState({ name: '', description: '', expiresAt: '', scopes: ['read', 'write'] });
 
   const load = async () => {
-    try { const [k, s] = await Promise.all([apiKeysApi.list(), apiKeysApi.stats()]); setKeys(Array.isArray(k) ? k : []); setStats(s); } catch {}
+    try { const [k, s] = await Promise.all([apiKeysApi.list(), apiKeysApi.stats()]); setKeys(Array.isArray(k) ? k : []); setStats(s); } catch (e: any) { toast.error('Could not load API keys'); }
     finally { setFetching(false); }
   };
   useEffect(() => { load(); }, []);
 
   const create = async () => {
     if (!form.name) return; setLoading(true);
-    try { const k = await apiKeysApi.create(form); setNewKey(k); setShowCreate(false); setForm({ name: '', description: '', expiresAt: '', scopes: ['read', 'write'] }); await load(); } catch {}
+    try { const k = await apiKeysApi.create(form); setNewKey(k); setShowCreate(false); setForm({ name: '', description: '', expiresAt: '', scopes: ['read', 'write'] }); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not create API key'); }
     finally { setLoading(false); }
   };
 
-  const revoke = async (id: string) => { try { await apiKeysApi.revoke(id); await load(); } catch {} };
-  const del = async (id: string) => { if (!confirm('Delete this API key?')) return; try { await apiKeysApi.delete(id); await load(); } catch {} };
+  const revoke = async (id: string) => { try { await apiKeysApi.revoke(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not revoke key'); } };
+  const del = async (id: string) => { if (!confirm('Delete this API key?')) return; try { await apiKeysApi.delete(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not delete key'); } };
 
   const copyText = (text: string, id: string) => { navigator.clipboard.writeText(text); setCopied(id); setTimeout(() => setCopied(''), 2000); };
 

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { workspacesApi } from '@/lib/api';
 import { Building2, Plus, Users, Mail, Trash2, Crown, Shield, Code, Eye, Send, Copy, Check } from 'lucide-react';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -21,26 +22,26 @@ export default function WorkspacePage() {
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'developer' });
 
   const load = async () => {
-    try { const d = await workspacesApi.list(); const arr = Array.isArray(d) ? d : []; setWorkspaces(arr); if (arr[0] && !selected) { setSelected(arr[0]); loadInvites(arr[0]._id); } } catch {}
+    try { const d = await workspacesApi.list(); const arr = Array.isArray(d) ? d : []; setWorkspaces(arr); if (arr[0] && !selected) { setSelected(arr[0]); loadInvites(arr[0]._id); } } catch (e: any) { toast.error('Could not load workspaces'); }
     finally { setFetching(false); }
   };
-  const loadInvites = async (id: string) => { try { const d = await workspacesApi.listInvites(id); setInvites(Array.isArray(d) ? d : []); } catch {} };
+  const loadInvites = async (id: string) => { try { const d = await workspacesApi.listInvites(id); setInvites(Array.isArray(d) ? d : []); } catch (e: any) { toast.error('Could not load team members'); } };
   useEffect(() => { load(); }, []);
 
   const createWs = async () => {
     setLoading(true);
-    try { await workspacesApi.create(createForm); setShowCreate(false); setCreateForm({ name: '', description: '' }); await load(); } catch {}
+    try { await workspacesApi.create(createForm); setShowCreate(false); setCreateForm({ name: '', description: '' }); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not create workspace'); }
     finally { setLoading(false); }
   };
 
   const invite = async () => {
     setLoading(true);
-    try { const r = await workspacesApi.invite(selected._id, inviteForm); setInviteResult(r); setInviteForm({ email: '', role: 'developer' }); await loadInvites(selected._id); } catch {}
+    try { const r = await workspacesApi.invite(selected._id, inviteForm); setInviteResult(r); setInviteForm({ email: '', role: 'developer' }); await loadInvites(selected._id); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not send invite'); }
     finally { setLoading(false); }
   };
 
-  const removeMember = async (uid: string) => { if (!confirm('Remove this member?')) return; try { await workspacesApi.removeMember(selected._id, uid); await load(); } catch {} };
-  const updateRole = async (uid: string, role: string) => { try { await workspacesApi.updateRole(selected._id, uid, role); await load(); } catch {} };
+  const removeMember = async (uid: string) => { if (!confirm('Remove this member?')) return; try { await workspacesApi.removeMember(selected._id, uid); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not remove member'); } };
+  const updateRole = async (uid: string, role: string) => { try { await workspacesApi.updateRole(selected._id, uid, role); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not update role'); } };
   const copyInvite = (url: string) => { navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
   const S: any = {

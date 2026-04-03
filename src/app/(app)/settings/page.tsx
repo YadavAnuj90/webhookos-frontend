@@ -65,7 +65,7 @@ export default function SettingsPage() {
     try {
       const r = await endpointsApi.list(PID, { limit: 100 });
       setPiiEndpoints((r?.endpoints || []).filter((ep: any) => ep.piiFields?.length > 0));
-    } catch {}
+    } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not save settings'); }
   };
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { usageApi } from '@/lib/api';
+import toast from 'react-hot-toast';
 import { BarChart2, Zap, CheckCircle, XCircle, Clock, TrendingUp, ArrowUpRight, CreditCard, AlertTriangle } from 'lucide-react';
 import { SkeletonCard, SkeletonText } from '@/components/ui/Skeleton';
 import Link from 'next/link';
@@ -32,7 +33,7 @@ export default function UsagePage() {
 
   const load = async () => {
     setLoading(true);
-    try { const [d, s] = await Promise.all([usageApi.get(period), usageApi.summary()]); setData(d); setSummary(s); } catch {}
+    try { const [d, s] = await Promise.all([usageApi.get(period), usageApi.summary()]); setData(d); setSummary(s); } catch { toast.error('Could not load usage data'); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [period]);

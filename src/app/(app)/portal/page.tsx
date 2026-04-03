@@ -300,7 +300,7 @@ export default function PortalPage() {
   // newToken: holds the one-time token string returned on creation (pt_xxxx)
   const [newToken, setNewToken]       = useState<{ token: string; customerName: string } | null>(null);
 
-  const load = async () => { try { const d = await portalApi.listTokens(); setTokens(Array.isArray(d) ? d : []); } catch {} finally { setFetching(false); } };
+  const load = async () => { try { const d = await portalApi.listTokens(); setTokens(Array.isArray(d) ? d : []); } catch { toast.error('Could not load portal tokens'); } finally { setFetching(false); } };
   useEffect(() => { load(); }, []);
 
   const create = async () => {
@@ -313,12 +313,12 @@ export default function PortalPage() {
       // Show the one-time token reveal if backend returned a token value
       if (created?.token) setNewToken({ token: created.token, customerName: created.customerName || form.customerName });
     }
-    catch {}
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Could not create portal token'); }
     finally { setLoading(false); }
   };
 
-  const revoke = async (id: string) => { try { await portalApi.revokeToken(id); await load(); } catch {} };
-  const del    = async (id: string) => { if (!confirm('Delete this portal token?')) return; try { await portalApi.deleteToken(id); await load(); } catch {} };
+  const revoke = async (id: string) => { try { await portalApi.revokeToken(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not revoke token'); } };
+  const del    = async (id: string) => { if (!confirm('Delete this portal token?')) return; try { await portalApi.deleteToken(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not delete token'); } };
 
   const portalUrl = (token: string) => `${typeof window !== 'undefined' ? window.location.origin : ''}/portal/${token}`;
   const copy = (text: string, id: string) => { navigator.clipboard.writeText(text); setCopied(id); setTimeout(() => setCopied(''), 2000); };

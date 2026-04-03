@@ -18,7 +18,8 @@ export default function TrialBanner() {
     throwOnError: false,
   });
 
-  if (!data || dismissed) return null;
+  // Guard: reject error-shaped 200 responses (e.g. {message, error, statusCode})
+  if (!data || !data.status || dismissed) return null;
   if (data.status === 'active') return null;
 
   const expired = data.status === 'trial_expired';

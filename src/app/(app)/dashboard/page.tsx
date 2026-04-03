@@ -125,11 +125,6 @@ export default function DashboardPage() {
     refetchInterval: 30000,
   });
 
-  const { data: epsAll } = useQuery({
-    queryKey: ['dep'],
-    queryFn: () => endpointsApi.list(PID, { limit: 5 }),
-  });
-
   // Track last updated from most frequently refreshed query
   useEffect(() => {
     if (sumUpdated) setLastUpdated(new Date(sumUpdated));

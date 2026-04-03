@@ -198,11 +198,13 @@
 [data-theme="light"] ::-webkit-scrollbar-thumb{background:rgba(99,102,241,.18)}
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover{background:rgba(99,102,241,.3)}
 
-/* Smooth theme transitions */
+/* Smooth theme transitions — ONLY on specific interactive elements, not * (too expensive) */
 html{transition:background-color .25s ease,color .25s ease}
-*, *::before, *::after{transition:background-color .2s ease,border-color .2s ease,color .15s ease}
-/* Exclude animations from transition override */
-.spin,.skel,.page{transition:none !important}
+.btn,.btn-ghost,.btn-primary,.btn-danger,.btn-success,.btn-icon,
+.tab,.input,.card,.stat-card,.tbl-wrap,.tbl tbody tr,
+aside,.nav-item,header{
+  transition:background-color .15s ease,border-color .15s ease,color .1s ease,box-shadow .15s ease,transform .1s ease;
+}
 
 html{font-size:14px}
 body{background:var(--bg);color:var(--t1);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased}
@@ -223,7 +225,7 @@ button{font-family:var(--sans);cursor:pointer}
 @keyframes pulse2{0%,100%{opacity:1}50%{opacity:.35}}
 
 /* Page — opacity only so transform never creates a fixed-position containing block */
-.page{animation:fadePage .3s ease both}
+.page{animation:fadePage .2s ease both}
 
 /* === CARDS === */
 .card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r3);padding:22px;transition:border-color .2s}
@@ -231,7 +233,8 @@ button{font-family:var(--sans);cursor:pointer}
 .card-sm{background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);padding:14px}
 
 /* === BUTTONS === */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--r2);font-size:13px;font-weight:600;border:none;transition:all .15s;white-space:nowrap;text-decoration:none;font-family:var(--sans)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--r2);font-size:13px;font-weight:600;border:none;transition:background-color .12s,border-color .12s,box-shadow .12s,transform .08s,color .1s;white-space:nowrap;text-decoration:none;font-family:var(--sans);user-select:none;-webkit-user-select:none}
+.btn:active:not(:disabled){transform:scale(0.97) !important;transition-duration:0.05s !important}
 .btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
 
 .btn-primary{background:linear-gradient(135deg,#4752e8,#5b6cf8);color:#fff;box-shadow:var(--sa)}
@@ -247,8 +250,9 @@ button{font-family:var(--sans);cursor:pointer}
 .btn-success:hover{background:rgba(34,197,94,.18)}
 
 .btn-sm{padding:5px 12px;font-size:12px;border-radius:var(--r1)}
-.btn-icon{padding:7px;border-radius:var(--r1);background:transparent;border:1px solid var(--b2);color:var(--t2);display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.btn-icon{padding:7px;border-radius:var(--r1);background:transparent;border:1px solid var(--b2);color:var(--t2);display:inline-flex;align-items:center;justify-content:center;transition:background-color .12s,border-color .12s,color .1s;user-select:none;-webkit-user-select:none}
 .btn-icon:hover{background:var(--card2);border-color:var(--b3);color:var(--t1)}
+.btn-icon:active{transform:scale(0.94);transition-duration:0.05s}
 
 /* === INPUTS === */
 .input{width:100%;background:rgba(255,255,255,.025);border:1px solid var(--b2);border-radius:var(--r2);padding:9px 12px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:all .15s}
@@ -302,9 +306,10 @@ textarea.input{resize:vertical;min-height:80px}
 
 /* === TABS === */
 .tabs{display:flex;gap:2px;background:var(--card2);border-radius:var(--r2);padding:3px}
-.tab{padding:7px 15px;border-radius:var(--r1);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;border:none;background:transparent;font-family:var(--sans);transition:all .15s}
+.tab{padding:7px 15px;border-radius:var(--r1);font-size:12px;font-weight:600;color:var(--t3);cursor:pointer;border:none;background:transparent;font-family:var(--sans);transition:background-color .12s,color .1s,box-shadow .12s;user-select:none;-webkit-user-select:none}
 .tab.on{background:var(--card);color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,.35)}
-.tab:hover:not(.on){color:var(--t2)}
+.tab:hover:not(.on){color:var(--t2);background:rgba(255,255,255,.04)}
+.tab:active{transform:scale(0.97);transition-duration:0.05s}
 
 /* === PAGE HEADER === */
 .ph{margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}

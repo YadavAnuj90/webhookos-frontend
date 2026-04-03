@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { playgroundApi } from '@/lib/api';
 import { FlaskConical, Send, Copy, Check, ChevronDown, ChevronUp, Zap, Clock, CheckCircle, XCircle, Shield } from 'lucide-react';
 
@@ -40,7 +41,7 @@ export default function PlaygroundPage() {
   };
 
   const validate = async () => {
-    try { const r = await playgroundApi.validateSignature({ payload: sigPayload, signature, secret }); setSigResult(r); } catch {}
+    try { const r = await playgroundApi.validateSignature({ payload: sigPayload, signature, secret }); setSigResult(r); } catch (e: any) { toast.error('Validation failed'); }
   };
 
   const copyResult = () => {

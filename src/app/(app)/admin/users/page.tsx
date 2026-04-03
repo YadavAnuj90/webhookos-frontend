@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { usersApi } from '@/lib/api';
 import { Users, Shield, Ban, CheckCircle, ChevronLeft, ChevronRight, Search, RefreshCw } from 'lucide-react';
 import { SkeletonTable } from '@/components/ui/Skeleton';
@@ -32,14 +33,14 @@ export default function AdminUsersPage() {
   useEffect(() => { load(); }, [page, search]);
 
   const changeRole = async (id: string, role: string) => {
-    try { await usersApi.changeRole(id, role); await load(); } catch {}
+    try { await usersApi.changeRole(id, role); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Operation failed'); }
   };
   const suspend = async (id: string) => {
     if (!confirm('Suspend this user?')) return;
-    try { await usersApi.suspend(id); await load(); } catch {}
+    try { await usersApi.suspend(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Operation failed'); }
   };
   const activate = async (id: string) => {
-    try { await usersApi.activate(id); await load(); } catch {}
+    try { await usersApi.activate(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Operation failed'); }
   };
 
   const totalPages = Math.max(1, Math.ceil(total / limit));

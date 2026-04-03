@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { alertsApi } from '@/lib/api';
 import { BellRing, Plus, Trash2, ToggleLeft, ToggleRight, Send, Mail, Slack, Webhook, AlertTriangle, CheckCircle } from 'lucide-react';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -16,7 +17,7 @@ export default function AlertsPage() {
   const [testing, setTesting] = useState('');
   const [form, setForm] = useState({ name: '', conditionType: 'consecutive_failures', threshold: 3, channel: 'email', channelTarget: '', cooldownSeconds: 300 });
 
-  const load = async () => { try { const d = await alertsApi.list(); setRules(Array.isArray(d) ? d : []); } catch {} finally { setFetching(false); } };
+  const load = async () => { try { const d = await alertsApi.list(); setRules(Array.isArray(d) ? d : []); } catch (e: any) { toast.error('Could not load alert rules'); } finally { setFetching(false); } };
   useEffect(() => { load(); }, []);
 
   const save = async () => {
@@ -25,14 +26,14 @@ export default function AlertsPage() {
       if (editRule) { await alertsApi.update(editRule._id, form); } else { await alertsApi.create(form); }
       setShowCreate(false); setEditRule(null); setForm({ name: '', conditionType: 'consecutive_failures', threshold: 3, channel: 'email', channelTarget: '', cooldownSeconds: 300 });
       await load();
-    } catch {} finally { setLoading(false); }
+    } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not save alert'); } finally { setLoading(false); }
   };
 
-  const del = async (id: string) => { if (!confirm('Delete this alert rule?')) return; try { await alertsApi.delete(id); await load(); } catch {} };
-  const toggle = async (id: string) => { try { await alertsApi.toggle(id); await load(); } catch {} };
+  const del = async (id: string) => { if (!confirm('Delete this alert rule?')) return; try { await alertsApi.delete(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not delete alert'); } };
+  const toggle = async (id: string) => { try { await alertsApi.toggle(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not toggle alert'); } };
   const test = async (id: string) => {
     setTesting(id);
-    try { await alertsApi.test(id); } catch {}
+    try { await alertsApi.test(id); } catch (e: any) { toast.error(e?.response?.data?.message || 'Alert test failed'); }
     setTimeout(() => setTesting(''), 2000);
   };
 

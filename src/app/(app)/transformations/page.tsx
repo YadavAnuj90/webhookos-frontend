@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { transformationsApi } from '@/lib/api';
 import { Shuffle, Plus, Trash2, Play, ChevronDown, GripVertical, Eye } from 'lucide-react';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -18,7 +19,7 @@ export default function TransformationsPage() {
   const [form, setForm] = useState({ name: '', description: '', type: 'remove_fields', config: {} as any });
   const [configStr, setConfigStr] = useState('{\n  "fields": ["password", "internalId"]\n}');
 
-  const load = async () => { try { const d = await transformationsApi.list(); setTransforms(Array.isArray(d) ? d : []); } catch {} finally { setFetching(false); } };
+  const load = async () => { try { const d = await transformationsApi.list(); setTransforms(Array.isArray(d) ? d : []); } catch (e: any) { toast.error('Could not load transformations'); } finally { setFetching(false); } };
   useEffect(() => { load(); }, []);
 
   const preview = async (t: any) => {
@@ -26,7 +27,7 @@ export default function TransformationsPage() {
       let input: any; try { input = JSON.parse(previewInput); } catch { input = previewInput; }
       const r = await transformationsApi.preview({ transformation: t, payload: input });
       setPreviewOutput(r);
-    } catch {}
+    } catch (e: any) { toast.error(e?.response?.data?.message || 'Operation failed'); }
   };
 
   const save = async () => {
@@ -37,10 +38,10 @@ export default function TransformationsPage() {
       if (editT) { await transformationsApi.update(editT._id, data); } else { await transformationsApi.create(data); }
       setShowCreate(false); setEditT(null); setForm({ name: '', description: '', type: 'remove_fields', config: {} }); setConfigStr('{}');
       await load();
-    } catch {} finally { setLoading(false); }
+    } catch (e: any) { toast.error(e?.response?.data?.message || 'Operation failed'); } finally { setLoading(false); }
   };
 
-  const del = async (id: string) => { if (!confirm('Delete this transformation?')) return; try { await transformationsApi.delete(id); await load(); } catch {} };
+  const del = async (id: string) => { if (!confirm('Delete this transformation?')) return; try { await transformationsApi.delete(id); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not delete transformation'); } };
 
   const CONFIG_TEMPLATES: any = {
     remove_fields: '{\n  "fields": ["password", "secret", "internalId"]\n}',
