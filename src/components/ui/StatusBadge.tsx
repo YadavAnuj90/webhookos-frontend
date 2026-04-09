@@ -2,7 +2,7 @@
 export default function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     active:'b-green', delivered:'b-green', success:'b-green',
-    paused:'b-yellow', pending:'b-yellow', rate_limited:'b-yellow',
+    paused:'b-yellow', pending:'b-yellow', rate_limited:'b-yellow', rate_queued:'b-yellow', scheduled:'b-blue',
     failed:'b-red', dead:'b-red', disabled:'b-red', suspended:'b-red',
     filtered:'b-blue', inactive:'b-gray',
   };

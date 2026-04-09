@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { analyticsApi, endpointsApi, eventsApi } from '@/lib/api';
 import { useAuth } from '@/lib/store';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Zap, Globe, AlertTriangle, TrendingUp, ArrowRight, Activity, RefreshCw, Plus, CheckCircle2 } from 'lucide-react';
+import { Zap, Globe, AlertTriangle, TrendingUp, ArrowRight, Activity, RefreshCw, Plus, CheckCircle2, Radio } from 'lucide-react';
+import LiveFeed from '@/components/realtime/LiveFeed';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -306,6 +307,11 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Live Delivery Feed */}
+      <div style={{ marginTop: 16 }}>
+        <LiveFeed projectId={PID} maxHeight={260}/>
       </div>
 
       <style>{`

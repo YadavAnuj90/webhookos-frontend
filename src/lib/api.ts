@@ -65,6 +65,14 @@ export const authApi = {
   createApiKey: (d: any) => api.post('/auth/api-keys', d).then(r => r.data),
   listApiKeys: () => api.get('/auth/api-keys').then(r => r.data),
   revokeApiKey: (id: string) => api.delete(`/auth/api-keys/${id}`).then(r => r.data),
+
+  // ── Two-Factor Authentication ───────────────────────────────────────────────
+  twoFactorSetup:    ()                    => api.post('/auth/2fa/setup').then(r => r.data),
+  twoFactorVerify:   (d: { code: string }) => api.post('/auth/2fa/verify', d).then(r => r.data),
+  twoFactorDisable:  (d: { code: string }) => api.post('/auth/2fa/disable', d).then(r => r.data),
+  twoFactorLogin:    (d: { challengeToken: string; code: string }) => api.post('/auth/2fa/login', d).then(r => r.data),
+  twoFactorStatus:   ()                    => api.get('/auth/2fa/status').then(r => r.data),
+  twoFactorRecoveryCodes: ()               => api.post('/auth/2fa/recovery-codes').then(r => r.data),
 };
 
 export const usersApi = {
@@ -255,6 +263,27 @@ export const metricsApi = {
 export const gdprApi = {
   erase: (pid: string, customerId: string) =>
     api.delete(`/projects/${pid}/events/erase`, { params: { customerId } }).then(r => r.data),
+};
+
+// ── Scheduling: Delayed / Cron Webhooks ──────────────────────────────────────
+export const schedulingApi = {
+  list:   (pid: string, p?: any) => api.get(`/projects/${pid}/scheduled-events`, { params: p }).then(r => r.data),
+  get:    (pid: string, id: string) => api.get(`/projects/${pid}/scheduled-events/${id}`).then(r => r.data),
+  create: (pid: string, d: any) => api.post(`/projects/${pid}/scheduled-events`, d).then(r => r.data),
+  update: (pid: string, id: string, d: any) => api.put(`/projects/${pid}/scheduled-events/${id}`, d).then(r => r.data),
+  cancel: (pid: string, id: string, reason?: string) => api.delete(`/projects/${pid}/scheduled-events/${id}`, { data: { reason } }).then(r => r.data),
+};
+
+// ── Permissions / RBAC ───────────────────────────────────────────────────────
+export const permissionsApi = {
+  getMatrix:       ()                                    => api.get('/permissions/matrix').then(r => r.data),
+  getRolePerms:    (role: string)                        => api.get(`/permissions/roles/${role}`).then(r => r.data),
+  compareRoles:    (role1: string, role2: string)        => api.get('/permissions/compare', { params: { role1, role2 } }).then(r => r.data),
+  listCustomRoles: (pid: string)                         => api.get(`/projects/${pid}/roles`).then(r => r.data),
+  getCustomRole:   (pid: string, roleId: string)         => api.get(`/projects/${pid}/roles/${roleId}`).then(r => r.data),
+  createCustomRole:(pid: string, d: any)                 => api.post(`/projects/${pid}/roles`, d).then(r => r.data),
+  updateCustomRole:(pid: string, roleId: string, d: any) => api.put(`/projects/${pid}/roles/${roleId}`, d).then(r => r.data),
+  deleteCustomRole:(pid: string, roleId: string)         => api.delete(`/projects/${pid}/roles/${roleId}`).then(r => r.data),
 };
 
 // ── NEW GROUP 7: Contract Testing (NO auth required) ──────────────────────────

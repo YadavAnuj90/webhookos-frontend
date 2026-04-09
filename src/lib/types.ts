@@ -303,6 +303,92 @@ export interface PiiDetectionResult {
   applied: boolean;
 }
 
+// ── 2FA Types ─────────────────────────────────────────────────────────────────
+
+export interface TwoFactorSetup {
+  secret: string;
+  otpauthUrl: string;
+  qrDataUrl: string;
+  recoveryCodes: string[];
+}
+
+export interface TwoFactorStatus {
+  enabled: boolean;
+  enabledAt?: string;
+}
+
+export interface TwoFactorLoginResponse {
+  requiresTwoFactor: true;
+  challengeToken: string;
+}
+
+// ── Scheduled Event Types ─────────────────────────────────────────────────────
+
+export type ScheduledEventStatus =
+  | 'pending' | 'queued' | 'delivered' | 'cancelled' | 'failed' | 'expired';
+
+export interface ScheduledEvent {
+  _id: string;
+  projectId: string;
+  endpointId: string;
+  eventType: string;
+  payload: Record<string, any>;
+  scheduledFor: string;
+  status: ScheduledEventStatus;
+  priority: EventPriority;
+  idempotencyKey?: string;
+  dispatchedEventId?: string;
+  cancelledReason?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Permissions / RBAC Types ──────────────────────────────────────────────────
+
+export interface CustomRole {
+  _id: string;
+  name: string;
+  description?: string;
+  projectId: string;
+  workspaceId?: string;
+  permissions: string[];
+  createdBy: string;
+  isActive: boolean;
+  color?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PermissionMatrix {
+  resources: string[];
+  actions: string[];
+  roles: Record<string, string[]>;
+}
+
+export interface PermissionDiff {
+  role1: string;
+  role2: string;
+  onlyInRole1: string[];
+  onlyInRole2: string[];
+  shared: string[];
+}
+
+// ── Realtime Event Types ──────────────────────────────────────────────────────
+
+export interface RealtimeDeliveryEvent {
+  type: 'delivery.success' | 'delivery.failed' | 'delivery.dead' | 'delivery.retry' | 'delivery.filtered' | 'delivery.rate_queued';
+  eventId: string;
+  endpointId: string;
+  projectId: string;
+  eventType: string;
+  status: string;
+  statusCode?: number;
+  latencyMs?: number;
+  retryCount?: number;
+  timestamp: string;
+}
+
 // ── Billing Types ──────────────────────────────────────────────────────────────
 
 export type SubStatus =

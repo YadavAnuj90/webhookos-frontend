@@ -15,7 +15,7 @@ import {
   ChevronRight, X, Check, Info, AlertCircle, Menu, Users, FileText,
   Key, BellRing, FlaskConical, Shuffle, ExternalLink, BarChart2,
   ChevronDown, Plus, Building2, CheckCheck, Sun, Moon,
-  Tag, Webhook, Radio, Gauge, Receipt, Coins, Store,
+  Tag, Webhook, Radio, Gauge, Receipt, Coins, Store, Calendar, Lock,
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -32,6 +32,7 @@ const NAV_GROUPS = [
     { href: '/api-keys',              icon: Key,          label: 'API Keys' },
     { href: '/transformations',       icon: Shuffle,      label: 'Transformations' },
     { href: '/event-types',           icon: Tag,          label: 'Event Types' },
+    { href: '/scheduled-events',      icon: Calendar,     label: 'Scheduled' },
     { href: '/operational-webhooks',  icon: Webhook,      label: 'Op. Webhooks' },
     { href: '/dev-tunnel',            icon: Radio,        label: 'Dev Tunnel' },
   ]},
@@ -43,6 +44,7 @@ const NAV_GROUPS = [
   { label: 'ACCOUNT', items: [
     { href: '/portal', icon: ExternalLink, label: 'Customer Portal' },
     { href: '/workspace', icon: Building2, label: 'Workspace' },
+    { href: '/permissions', icon: Lock, label: 'Permissions' },
     { href: '/settings', icon: Settings, label: 'Settings' },
   ]},
 ];
@@ -219,6 +221,7 @@ const CRUMB_MAP: Record<string, string> = {
   portal: 'Portal', workspace: 'Workspace', settings: 'Settings', profile: 'Profile',
   billing: 'Billing', credits: 'Credits', invoices: 'Invoices', reseller: 'Reseller',
   admin: 'Admin', users: 'Users', audit: 'Audit Log', health: 'Health',
+  'scheduled-events': 'Scheduled Events', permissions: 'Permissions',
 };
 
 function Breadcrumbs() {

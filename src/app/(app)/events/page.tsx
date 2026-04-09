@@ -14,7 +14,7 @@ import EventDrawer from '@/components/ui/EventDrawer';
 
 const PID = 'default';
 
-const STATUS_OPTS = ['', 'pending', 'delivered', 'failed', 'dead', 'filtered', 'rate_limited'];
+const STATUS_OPTS = ['', 'pending', 'delivered', 'failed', 'dead', 'filtered', 'rate_limited', 'rate_queued', 'scheduled'];
 const PRIORITY_OPTS: Array<{ val: string; label: string }> = [
   { val: '', label: 'All Priorities' },
   { val: 'p0', label: '🔴 P0 Critical' },

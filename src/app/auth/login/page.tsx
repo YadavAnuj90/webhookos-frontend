@@ -118,11 +118,36 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
+  // 2FA challenge state
+  const [twoFaStep, setTwoFaStep] = useState(false);
+  const [challengeToken, setChallengeToken] = useState('');
+  const [totpCode, setTotpCode] = useState('');
+  const [twoFaLoading, setTwoFaLoading] = useState(false);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
-    try { login(await authApi.login({ email, password: pw })); router.push('/dashboard'); }
+    try {
+      const res = await authApi.login({ email, password: pw });
+      if (res.requiresTwoFactor) {
+        setChallengeToken(res.challengeToken);
+        setTwoFaStep(true);
+        setLoading(false);
+        return;
+      }
+      login(res); router.push('/dashboard');
+    }
     catch (err: any) { toast.error(err.response?.data?.message || 'Login failed'); }
     finally { setLoading(false); }
+  };
+
+  const submit2fa = async (e: React.FormEvent) => {
+    e.preventDefault(); setTwoFaLoading(true);
+    try {
+      const res = await authApi.twoFactorLogin({ challengeToken, code: totpCode });
+      login(res); router.push('/dashboard');
+    }
+    catch (err: any) { toast.error(err.response?.data?.message || 'Invalid 2FA code'); setTotpCode(''); }
+    finally { setTwoFaLoading(false); }
   };
 
   const features = [
@@ -200,66 +225,106 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="auth-card-title">Welcome back</div>
-            <div className="auth-card-sub">Sign in to your delivery dashboard</div>
+            {!twoFaStep ? (
+              <>
+                <div className="auth-card-title">Welcome back</div>
+                <div className="auth-card-sub">Sign in to your delivery dashboard</div>
 
-            <form onSubmit={submit}>
-              <div className="auth-field">
-                <label className="auth-label">Email address</label>
-                <input
-                  className="auth-input" type="email" placeholder="you@company.com"
-                  value={email} onChange={e => setEmail(e.target.value)} required autoFocus
-                />
-              </div>
+                <form onSubmit={submit}>
+                  <div className="auth-field">
+                    <label className="auth-label">Email address</label>
+                    <input
+                      className="auth-input" type="email" placeholder="you@company.com"
+                      value={email} onChange={e => setEmail(e.target.value)} required autoFocus
+                    />
+                  </div>
 
-              <div className="auth-field">
-                <div className="auth-row">
-                  <label className="auth-label" style={{ margin:0 }}>Password</label>
-                  <Link href="/auth/forgot-password" className="auth-forgot">Forgot password?</Link>
+                  <div className="auth-field">
+                    <div className="auth-row">
+                      <label className="auth-label" style={{ margin:0 }}>Password</label>
+                      <Link href="/auth/forgot-password" className="auth-forgot">Forgot password?</Link>
+                    </div>
+                    <div className="auth-input-wrap">
+                      <input
+                        className="auth-input" type={show ? 'text' : 'password'}
+                        placeholder="Enter your password"
+                        value={pw} onChange={e => setPw(e.target.value)} required
+                        style={{ paddingRight:40 }}
+                      />
+                      <button type="button" className="auth-eye" onClick={() => setShow(!show)}>
+                        {show ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="auth-btn" disabled={loading}>
+                    {loading ? (
+                      <><div className="auth-spin" /> Signing in...</>
+                    ) : (
+                      <>Sign In <ArrowRight size={14} /></>
+                    )}
+                  </button>
+                </form>
+
+                {/* ── OR separator ── */}
+                <div className="auth-or">
+                  <div className="auth-or-line" />
+                  <span className="auth-or-text">or continue with</span>
+                  <div className="auth-or-line" />
                 </div>
-                <div className="auth-input-wrap">
-                  <input
-                    className="auth-input" type={show ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={pw} onChange={e => setPw(e.target.value)} required
-                    style={{ paddingRight:40 }}
-                  />
-                  <button type="button" className="auth-eye" onClick={() => setShow(!show)}>
-                    {show ? <EyeOff size={15} /> : <Eye size={15} />}
+
+                {/* ── Google button ── */}
+                <button
+                  type="button"
+                  className="auth-google-btn"
+                  onClick={() => { window.location.href = GOOGLE_AUTH_URL; }}
+                >
+                  <GoogleIcon />
+                  Continue with Google
+                </button>
+
+                <div className="auth-divider">
+                  No account?{' '}
+                  <Link href="/auth/register">Create one free →</Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="auth-card-title">Two-Factor Auth</div>
+                <div className="auth-card-sub">Enter the 6-digit code from your authenticator app</div>
+
+                <form onSubmit={submit2fa}>
+                  <div className="auth-field">
+                    <label className="auth-label">Verification Code</label>
+                    <input
+                      className="auth-input" type="text" inputMode="numeric" maxLength={6}
+                      placeholder="000000" autoFocus autoComplete="one-time-code"
+                      value={totpCode} onChange={e => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      required
+                      style={{ textAlign:'center', letterSpacing:8, fontSize:22, fontWeight:700, fontFamily:'Fira Code,monospace' }}
+                    />
+                  </div>
+
+                  <button type="submit" className="auth-btn" disabled={twoFaLoading || totpCode.length !== 6}>
+                    {twoFaLoading ? (
+                      <><div className="auth-spin" /> Verifying...</>
+                    ) : (
+                      <>Verify &amp; Sign In <ArrowRight size={14} /></>
+                    )}
+                  </button>
+                </form>
+
+                <div style={{ marginTop:16, textAlign:'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setTwoFaStep(false); setChallengeToken(''); setTotpCode(''); }}
+                    style={{ background:'none', border:'none', color:'rgba(99,102,241,.8)', fontSize:12, cursor:'pointer', fontFamily:'Fira Code,monospace' }}
+                  >
+                    ← Back to login
                   </button>
                 </div>
-              </div>
-
-              <button type="submit" className="auth-btn" disabled={loading}>
-                {loading ? (
-                  <><div className="auth-spin" /> Signing in...</>
-                ) : (
-                  <>Sign In <ArrowRight size={14} /></>
-                )}
-              </button>
-            </form>
-
-            {/* ── OR separator ── */}
-            <div className="auth-or">
-              <div className="auth-or-line" />
-              <span className="auth-or-text">or continue with</span>
-              <div className="auth-or-line" />
-            </div>
-
-            {/* ── Google button ── */}
-            <button
-              type="button"
-              className="auth-google-btn"
-              onClick={() => { window.location.href = GOOGLE_AUTH_URL; }}
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-
-            <div className="auth-divider">
-              No account?{' '}
-              <Link href="/auth/register">Create one free →</Link>
-            </div>
+              </>
+            )}
 
             <div style={{ marginTop:22, display:'flex', alignItems:'center', gap:8, padding:'10px 12px', background:'rgba(34,197,94,.06)', border:'1px solid rgba(34,197,94,.15)', borderRadius:10 }}>
               <Cpu size={12} color="#22c55e" style={{ flexShrink:0 }} />
