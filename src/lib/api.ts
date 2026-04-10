@@ -243,7 +243,9 @@ export const operationalWebhooksApi = {
 // ── GROUP 3: Dev Tunnel ──────────────────────────────────────────────────────
 export const tunnelApi = {
   create: ()                  => api.post('/tunnel/create', {}).then(r => r.data),
+  mine:   ()                  => api.get('/tunnel/mine').then(r => r.data),
   status: (tunnelId: string)  => api.get(`/tunnel/status/${tunnelId}`).then(r => r.data),
+  remove: (tunnelId: string)  => api.delete(`/tunnel/${tunnelId}`).then(r => r.data),
 };
 
 // ── GROUP 4: Portal Branding ─────────────────────────────────────────────────

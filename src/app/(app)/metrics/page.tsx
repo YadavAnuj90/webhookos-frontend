@@ -1,11 +1,14 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { metricsApi } from '@/lib/api';
 import {
   Gauge, Copy, Check, Activity, Database, BarChart3,
   AlertCircle, ExternalLink, RefreshCw, Loader2, CheckCircle2, XCircle,
+  Cpu, Zap, Timer, ShieldAlert, ArrowUpRight, ArrowDownRight,
+  Radio, Server, Layers, GitBranch, Clock, Eye,
+  TrendingUp, Signal, Box, AlertTriangle, Search,
 } from 'lucide-react';
-import { SkeletonText } from '@/components/ui/Skeleton';
+import { SkeletonText, SkeletonCard } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 
 // ── Prometheus text format parser ─────────────────────────────────────────────
@@ -42,7 +45,6 @@ function parsePrometheus(text: string): ParsedMetric[] {
       map[name].type = type;
       currentName = name;
     } else if (!line.startsWith('#')) {
-      // sample line: metric_name{labels} value [timestamp]
       const braceIdx = line.indexOf('{');
       const spaceIdx = line.lastIndexOf(' ');
       let metricName: string;
@@ -77,33 +79,64 @@ function sumSamples(samples: { value: string }[]): string {
   return Number.isInteger(total) ? String(total) : total.toFixed(4);
 }
 
-// ── Small components ──────────────────────────────────────────────────────────
-function CopyRow({ label, value }: { label: string; value: string }) {
+function getNumericSum(samples: { value: string }[]): number {
+  return samples.reduce((a, s) => a + (parseFloat(s.value) || 0), 0);
+}
+
+// ── Type config ──────────────────────────────────────────────────────────────
+const TYPE_CONFIG: Record<string, { color: string; bg: string; icon: any }> = {
+  counter:   { color: '#818cf8', bg: 'rgba(129,140,248,.10)', icon: TrendingUp },
+  gauge:     { color: '#22d3ee', bg: 'rgba(34,211,238,.10)',  icon: Gauge },
+  histogram: { color: '#fbbf24', bg: 'rgba(251,191,36,.10)',  icon: BarChart3 },
+  summary:   { color: '#c084fc', bg: 'rgba(192,132,252,.10)', icon: Layers },
+};
+
+// ── Stat card icons for known metrics ────────────────────────────────────────
+const METRIC_CARDS: {
+  match: string; label: string; icon: any; color: string; bg: string; suffix?: string;
+}[] = [
+  { match: 'webhook_delivered_total',     label: 'Delivered',        icon: CheckCircle2,  color: '#22c55e', bg: 'rgba(34,197,94,.10)' },
+  { match: 'webhook_failed_total',        label: 'Failed',           icon: XCircle,       color: '#f87171', bg: 'rgba(248,113,113,.10)' },
+  { match: 'webhook_queue_size',          label: 'Queue Size',       icon: Layers,        color: '#818cf8', bg: 'rgba(129,140,248,.10)' },
+  { match: 'webhook_dlq_size',            label: 'DLQ Size',         icon: AlertTriangle, color: '#fbbf24', bg: 'rgba(251,191,36,.10)' },
+  { match: 'webhook_active_endpoints',    label: 'Active Endpoints', icon: Radio,         color: '#22d3ee', bg: 'rgba(34,211,238,.10)' },
+  { match: 'webhook_circuit_breakers_open', label: 'Circuits Open', icon: ShieldAlert,   color: '#f97316', bg: 'rgba(249,115,22,.10)' },
+];
+
+// ── Copy button component ────────────────────────────────────────────────────
+function CopyButton({ value, size = 12 }: { value: string; size?: number }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard.writeText(value);
-    setCopied(true); toast.success('Copied');
+    setCopied(true);
+    toast.success('Copied');
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 9, padding: '10px 14px', marginBottom: 10 }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>{label}</div>
-        <code style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent2)', wordBreak: 'break-all' }}>{value}</code>
-      </div>
-      <button onClick={copy} className="btn-icon btn-sm" title="Copy">
-        {copied ? <Check size={13} color="#4ade80" /> : <Copy size={13} />}
-      </button>
-    </div>
+    <button onClick={copy} className="btn-icon" title="Copy" style={{ padding: 4 }}>
+      {copied ? <Check size={size} color="var(--green)" /> : <Copy size={size} />}
+    </button>
   );
 }
 
-const TYPE_COLOR: Record<string, string> = {
-  counter:   '#6366f1',
-  gauge:     '#0891b2',
-  histogram: '#f59e0b',
-  summary:   '#8b5cf6',
-};
+// ── Status pulse ─────────────────────────────────────────────────────────────
+function StatusPulse({ live, loading, error }: { live: boolean; loading: boolean; error: boolean }) {
+  const color = error ? 'var(--red)' : loading ? 'var(--yellow)' : 'var(--green)';
+  const label = error ? 'UNREACHABLE' : loading ? 'LOADING' : 'LIVE';
+  return (
+    <span style={{
+      fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 5,
+      background: error ? 'var(--rbg)' : loading ? 'var(--ybg)' : 'var(--gbg)',
+      color, border: `1px solid ${error ? 'var(--rbd)' : loading ? 'var(--ybd)' : 'var(--gbd)'}`,
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, display: 'inline-block',
+        ...(live && !error && !loading ? { animation: 'pulse 2s ease-in-out infinite' } : {})
+      }} />
+      {label}
+    </span>
+  );
+}
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function MetricsPage() {
@@ -111,14 +144,16 @@ export default function MetricsPage() {
 
   const [raw, setRaw]         = useState<string | null>(null);
   const [metrics, setMetrics] = useState<ParsedMetric[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [search, setSearch]   = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   const fetchMetrics = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      // Use metricsApi.get() so the axios interceptor adds the Authorization header
       const text = await metricsApi.get();
       setRaw(text);
       setMetrics(parsePrometheus(text));
@@ -129,157 +164,292 @@ export default function MetricsPage() {
     } finally { setLoading(false); }
   }, []);
 
-  // Auto-fetch on mount
   useEffect(() => { fetchMetrics(); }, [fetchMetrics]);
 
-  // Check if Datadog / New Relic forwarder metrics exist in the data
+  // Auto-refresh every 15s
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(fetchMetrics, 15000);
+    return () => clearInterval(id);
+  }, [autoRefresh, fetchMetrics]);
+
+  // Check integrations
   const hasDatadog  = metrics.some(m => m.name.includes('datadog'));
   const hasNewRelic = metrics.some(m => m.name.includes('newrelic') || m.name.includes('new_relic'));
 
-  const S: any = { card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '24px' } };
+  // Build stat cards from live data
+  const statCards = METRIC_CARDS.map(cfg => {
+    const m = metrics.find(mt => mt.name === cfg.match);
+    return { ...cfg, value: m ? sumSamples(m.samples) : '—', rawValue: m ? getNumericSum(m.samples) : 0 };
+  });
+
+  // Filtered metrics
+  const filteredMetrics = metrics.filter(m => {
+    if (search && !m.name.toLowerCase().includes(search.toLowerCase()) && !m.help.toLowerCase().includes(search.toLowerCase())) return false;
+    if (typeFilter && m.type !== typeFilter) return false;
+    return true;
+  });
+
+  const typeGroups = ['counter', 'gauge', 'histogram', 'summary'];
+  const typeCounts = typeGroups.reduce((acc, t) => {
+    acc[t] = metrics.filter(m => m.type === t).length;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="page">
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="ph">
-        <div className="ph-left" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#7c3aed,#a78bfa)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Gauge size={18} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ margin: 0 }}>Metrics & Observability</h1>
-            <p style={{ margin: 0 }}>// Prometheus-compatible metrics exported for Grafana, Datadog, and New Relic</p>
-          </div>
+        <div className="ph-left">
+          <h1>Metrics & Observability</h1>
+          <p>// Prometheus-compatible metrics for Grafana, Datadog & New Relic</p>
         </div>
-        <div className="ph-right" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="ph-right" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {lastFetched && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text3)' }}>
-              updated {lastFetched.toLocaleTimeString()}
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)' }}>
+              {lastFetched.toLocaleTimeString()}
             </span>
           )}
           <button
-            onClick={fetchMetrics} disabled={loading}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)', fontFamily: 'var(--font-body)', fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
+            className={`btn btn-ghost btn-sm`}
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            style={autoRefresh ? { background: 'var(--gbg)', color: 'var(--green)', border: '1px solid var(--gbd)' } : {}}
           >
-            {loading
-              ? <><Loader2 size={13} style={{ animation: 'spin .7s linear infinite' }} />Fetching…</>
-              : <><RefreshCw size={13} />Refresh</>}
+            <Signal size={11} />{autoRefresh ? 'Auto 15s' : 'Auto Off'}
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={fetchMetrics} disabled={loading}>
+            {loading ? <Loader2 size={11} style={{ animation: 'spin .7s linear infinite' }} /> : <RefreshCw size={11} />}
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* Prometheus endpoint */}
-      <div style={{ ...S.card, marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 16 }}>
-          <Activity size={15} color="var(--accent2)" />
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Prometheus Endpoint</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, padding: '2px 7px', borderRadius: 5,
-            background: error ? 'rgba(248,113,113,.12)' : 'rgba(74,222,128,.12)',
-            color: error ? '#f87171' : '#4ade80', fontWeight: 700 }}>
-            {error ? '✗ UNREACHABLE' : loading ? '… LOADING' : '● LIVE'}
-          </span>
+      {/* ── Stat Cards Grid ─────────────────────────────────────────────────── */}
+      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', marginBottom: 20 }}>
+        {loading && !metrics.length
+          ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+          : statCards.map(c => (
+            <div key={c.match} className="stat-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: c.bg, border: `1px solid ${c.color}25`, flexShrink: 0,
+                }}>
+                  <c.icon size={17} color={c.color} strokeWidth={1.8} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div className="stat-lbl">{c.label}</div>
+                  <div className="stat-val">{c.value}</div>
+                </div>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      {/* ── Prometheus Endpoint Card ────────────────────────────────────────── */}
+      <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 8, background: 'var(--abg)', border: '1px solid var(--abd)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Activity size={15} color="var(--a)" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>Prometheus Endpoint</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)', marginTop: 1 }}>
+              Scrape URL for Grafana, Datadog Agent & New Relic
+            </div>
+          </div>
+          <StatusPulse live={metrics.length > 0} loading={loading} error={!!error} />
         </div>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)', marginBottom: 14, lineHeight: 1.6 }}>
-          The <code style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent2)', background: 'rgba(99,102,241,.1)', padding: '1px 5px', borderRadius: 4 }}>/metrics</code> endpoint returns Prometheus-format text. Scrape it directly from Grafana, or configure Datadog/New Relic agent to forward it.
-        </p>
-        <CopyRow label="Scrape URL" value={prometheusUrl} />
+
+        {/* Scrape URL */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'var(--card2)', border: '1px solid var(--b1)', borderRadius: 'var(--r2)',
+          padding: '10px 14px', marginBottom: 12,
+        }}>
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', marginBottom: 2 }}>SCRAPE URL</div>
+            <code style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--a)', wordBreak: 'break-all' }}>{prometheusUrl}</code>
+          </div>
+          <CopyButton value={prometheusUrl} />
+        </div>
+
         {error && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'rgba(248,113,113,.07)', border: '1px solid rgba(248,113,113,.2)', borderRadius: 8, marginBottom: 10 }}>
-            <XCircle size={13} color="#f87171" />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#f87171' }}>{error}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: 'var(--rbg)', border: '1px solid var(--rbd)', borderRadius: 'var(--r2)', marginBottom: 12 }}>
+            <XCircle size={13} color="var(--red)" />
+            <span style={{ fontSize: 12, color: 'var(--red)' }}>{error}</span>
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 4 }}>
+
+        {/* Endpoint info pills */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           {[
-            { label: 'Format',    val: 'text/plain 0.0.4' },
-            { label: 'Auth',      val: 'None (public)' },
-            { label: 'Interval',  val: 'Recommend 15s' },
-          ].map(({ label, val }) => (
-            <div key={label} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 9, padding: '10px 14px' }}>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>{label}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{val}</div>
+            { icon: Box, label: 'Format', val: 'text/plain 0.0.4' },
+            { icon: ShieldAlert, label: 'Auth', val: 'Bearer JWT' },
+            { icon: Clock, label: 'Interval', val: 'Recommend 15s' },
+          ].map(({ icon: Icon, label, val }) => (
+            <div key={label} style={{
+              background: 'var(--card2)', border: '1px solid var(--b1)', borderRadius: 'var(--r2)',
+              padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <Icon size={13} color="var(--t3)" />
+              <div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)' }}>{label}</div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--t1)', fontWeight: 600 }}>{val}</div>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Integration status */}
-      <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Integration Status</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
+      {/* ── Integration Status ──────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
         {[
-          { name: 'Datadog',   logo: <BarChart3 size={18} color="#632ca6" />, color: '#632ca6', connected: hasDatadog,  note: 'Set DATADOG_API_KEY in backend environment to enable automatic metric forwarding. Metrics appear in Datadog under the webhookos.* namespace.' },
-          { name: 'New Relic', logo: <Database size={18} color="#008c99" />,  color: '#008c99', connected: hasNewRelic, note: 'Set NEW_RELIC_LICENSE_KEY in backend environment. Metrics are forwarded via the New Relic Metric API on every scrape cycle.' },
-        ].map(({ name, logo, color, connected, note }) => (
-          <div key={name} style={{ background: 'var(--bg2)', border: `1px solid ${connected ? color + '30' : 'var(--border)'}`, borderRadius: 12, padding: '20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {logo}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{name}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, padding: '2px 8px', borderRadius: 5, fontWeight: 700,
-                  background: connected ? 'rgba(74,222,128,.12)' : 'rgba(148,163,184,.1)',
-                  color: connected ? '#4ade80' : 'var(--text3)' }}>
-                  {connected ? '● ACTIVE' : loading ? '… CHECKING' : '○ NOT CONFIGURED'}
-                </span>
+          {
+            name: 'Grafana',   icon: Activity, color: '#f97316', connected: true,
+            note: 'Add Prometheus data source pointing to scrape URL above',
+          },
+          {
+            name: 'Datadog',   icon: BarChart3, color: '#632ca6', connected: hasDatadog,
+            note: 'Set DATADOG_API_KEY env var to enable auto-forwarding',
+          },
+          {
+            name: 'New Relic', icon: Database, color: '#008c99', connected: hasNewRelic,
+            note: 'Set NEW_RELIC_LICENSE_KEY env var for Metric API forwarding',
+          },
+        ].map(({ name, icon: Icon, color, connected, note }) => (
+          <div key={name} className="card" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 8,
+                background: color + '15', border: `1px solid ${color}25`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <Icon size={16} color={color} />
               </div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', lineHeight: 1.55 }}>{note}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)' }}>{name}</div>
+              </div>
+              <span style={{
+                fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
+                background: connected ? 'var(--gbg)' : 'rgba(148,163,184,.08)',
+                color: connected ? 'var(--green)' : 'var(--t3)',
+                border: `1px solid ${connected ? 'var(--gbd)' : 'var(--b1)'}`,
+              }}>
+                {connected ? 'ACTIVE' : 'NOT SET'}
+              </span>
             </div>
+            <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.55 }}>{note}</div>
           </div>
         ))}
       </div>
 
-      {/* Grafana setup */}
-      <div style={{ ...S.card, marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
-          <Activity size={15} color="#f97316" />
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Grafana Setup</span>
+      {/* ── Grafana Config ──────────────────────────────────────────────────── */}
+      <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 7, background: 'rgba(249,115,22,.10)', border: '1px solid rgba(249,115,22,.20)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Activity size={13} color="#f97316" />
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)' }}>Grafana Setup</span>
         </div>
-        <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text2)', marginBottom: 14, lineHeight: 1.65 }}>
-          Add a new Prometheus data source in Grafana pointing to the scrape URL above. Then import a dashboard or build custom panels using the metrics below.
+        <div style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 12, lineHeight: 1.6 }}>
+          Add a Prometheus data source in Grafana pointing to the scrape URL above, then import or build custom dashboards.
         </div>
-        <div style={{ position: 'relative', background: '#0d1117', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '14px 44px 14px 16px' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#79c0ff', marginBottom: 8 }}># Grafana datasource config (prometheus.yml)</div>
+        <div style={{
+          position: 'relative', background: '#0d1117', border: '1px solid rgba(255,255,255,.06)',
+          borderRadius: 'var(--r2)', padding: '14px 44px 14px 16px', overflow: 'hidden',
+        }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#6e7681', marginBottom: 6 }}># prometheus.yml</div>
           {[
             ['scrape_configs:', '#e6edf3'],
             ['  - job_name: webhookos', '#a5d6ff'],
+            ['    metrics_path: /api/v1/metrics', '#a5d6ff'],
             ['    static_configs:', '#e6edf3'],
-            [`      - targets: ['${prometheusUrl.replace(/^https?:\/\//, '')}']`, '#4ade80'],
+            [`      - targets: ['${prometheusUrl.replace(/^https?:\/\//, '').replace(/\/api\/v1\/metrics$/, '')}']`, '#4ade80'],
           ].map(([line, color], i) => (
-            <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color, lineHeight: 1.7 }}>{line}</div>
+            <div key={i} style={{ fontFamily: 'var(--mono)', fontSize: 11, color, lineHeight: 1.7 }}>{line}</div>
           ))}
-          <button
-            onClick={() => {
-              const yaml = `scrape_configs:\n  - job_name: webhookos\n    static_configs:\n      - targets: ['${prometheusUrl.replace(/^https?:\/\//, '')}']`;
-              navigator.clipboard.writeText(yaml);
-              toast.success('YAML copied');
-            }}
-            className="btn-icon btn-sm"
-            style={{ position: 'absolute', top: 10, right: 10 }}
-          ><Copy size={12} /></button>
+          <div style={{ position: 'absolute', top: 10, right: 10 }}>
+            <CopyButton
+              value={`scrape_configs:\n  - job_name: webhookos\n    metrics_path: /api/v1/metrics\n    static_configs:\n      - targets: ['${prometheusUrl.replace(/^https?:\/\//, '').replace(/\/api\/v1\/metrics$/, '')}']`}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Live metrics table */}
-      <div style={S.card}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Live Metrics</span>
-            {!loading && metrics.length > 0 && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, padding: '2px 7px', borderRadius: 5, background: 'rgba(74,222,128,.1)', color: '#4ade80' }}>
-                {metrics.length} series
-              </span>
-            )}
-          </div>
+      {/* ── Live Metrics ────────────────────────────────────────────────────── */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {/* Header bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px',
+          borderBottom: '1px solid var(--b1)',
+        }}>
+          <Cpu size={14} color="var(--a)" />
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', flex: 1 }}>
+            Live Metrics
+          </span>
+
+          {/* Type filter pills */}
+          {metrics.length > 0 && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button
+                className={`btn btn-ghost btn-sm`}
+                onClick={() => setTypeFilter('')}
+                style={{
+                  fontSize: 10, padding: '2px 8px',
+                  ...(typeFilter === '' ? { background: 'var(--abg)', color: 'var(--a)', border: '1px solid var(--abd)' } : {}),
+                }}
+              >
+                All ({metrics.length})
+              </button>
+              {typeGroups.map(t => typeCounts[t] > 0 && (
+                <button
+                  key={t}
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setTypeFilter(typeFilter === t ? '' : t)}
+                  style={{
+                    fontSize: 10, padding: '2px 8px', textTransform: 'capitalize',
+                    ...(typeFilter === t ? { background: TYPE_CONFIG[t].bg, color: TYPE_CONFIG[t].color, border: `1px solid ${TYPE_CONFIG[t].color}30` } : {}),
+                  }}
+                >
+                  {t} ({typeCounts[t]})
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Search */}
+          {metrics.length > 0 && (
+            <div className="search-box" style={{ width: 180 }}>
+              <Search size={12} />
+              <input
+                className="input"
+                placeholder="Search metrics..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ fontSize: 11 }}
+              />
+            </div>
+          )}
+
           <a href={prometheusUrl} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--accent2)', textDecoration: 'none' }}>
-            <ExternalLink size={12} />View raw
+            style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--a)', textDecoration: 'none' }}>
+            <ExternalLink size={11} />Raw
           </a>
         </div>
 
+        {/* Loading state */}
         {loading && !metrics.length && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '16px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: 20 }}>
             {[0,1,2,3,4,5].map(i => (
-              <div key={i} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, padding: 16 }}>
+              <div key={i} style={{ background: 'var(--card2)', border: '1px solid var(--b1)', borderRadius: 'var(--r2)', padding: 16 }}>
                 <SkeletonText width="60%" height={11} style={{ marginBottom: 8 }} />
                 <SkeletonText width="40%" height={20} style={{ marginBottom: 6 }} />
                 <SkeletonText width="80%" height={9} />
@@ -288,34 +458,63 @@ export default function MetricsPage() {
           </div>
         )}
 
+        {/* Error state */}
         {error && !metrics.length && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '32px 0' }}>
-            <XCircle size={16} color="#f87171" />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#f87171' }}>Could not load metrics. Is the backend running?</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '40px 20px' }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 12, background: 'var(--rbg)', border: '1px solid var(--rbd)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <XCircle size={22} color="var(--red)" strokeWidth={1.5} />
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>Could not load metrics</div>
+            <div style={{ fontSize: 12, color: 'var(--t3)' }}>Is the backend running?</div>
+            <button className="btn btn-ghost btn-sm" onClick={fetchMetrics} style={{ marginTop: 4 }}>
+              <RefreshCw size={11} />Retry
+            </button>
           </div>
         )}
 
-        {metrics.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {metrics.map(m => {
-              const typeColor = TYPE_COLOR[m.type] || 'var(--text3)';
+        {/* Metrics grid */}
+        {filteredMetrics.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: 'var(--b1)' }}>
+            {filteredMetrics.map(m => {
+              const cfg = TYPE_CONFIG[m.type] || { color: 'var(--t3)', bg: 'rgba(148,163,184,.08)', icon: Activity };
+              const TypeIcon = cfg.icon;
               const total = sumSamples(m.samples);
               return (
-                <div key={m.name} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 9, padding: '10px 12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <code style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent2)' }}>{m.name}</code>
-                      {m.type && (
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, padding: '1px 5px', borderRadius: 4,
-                          background: typeColor + '18', color: typeColor, textTransform: 'capitalize' }}>
-                          {m.type}
-                        </span>
-                      )}
-                    </div>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{total}</span>
+                <div key={m.name} style={{
+                  background: 'var(--card)', padding: '14px 18px',
+                  display: 'flex', alignItems: 'flex-start', gap: 12,
+                }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: 7, flexShrink: 0, marginTop: 1,
+                    background: cfg.bg, border: `1px solid ${cfg.color}20`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <TypeIcon size={14} color={cfg.color} />
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)', lineHeight: 1.4 }}>
-                    {m.help || `${m.samples.length} sample${m.samples.length !== 1 ? 's' : ''}`}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                      <code style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--a)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {m.name}
+                      </code>
+                      <span style={{
+                        fontFamily: 'var(--mono)', fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
+                        background: cfg.bg, color: cfg.color, textTransform: 'uppercase', flexShrink: 0,
+                      }}>
+                        {m.type}
+                      </span>
+                    </div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--t3)', lineHeight: 1.4 }}>
+                      {m.help || `${m.samples.length} sample${m.samples.length !== 1 ? 's' : ''}`}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 16, fontWeight: 700, color: 'var(--t1)' }}>{total}</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)' }}>
+                      {m.samples.length} sample{m.samples.length !== 1 ? 's' : ''}
+                    </div>
                   </div>
                 </div>
               );
@@ -323,45 +522,62 @@ export default function MetricsPage() {
           </div>
         )}
 
+        {/* No results from search */}
+        {metrics.length > 0 && filteredMetrics.length === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '32px 20px' }}>
+            <Search size={20} color="var(--t3)" />
+            <div style={{ fontSize: 12, color: 'var(--t3)' }}>No metrics match your filter</div>
+          </div>
+        )}
+
         {/* Fallback static list when endpoint is unreachable */}
         {!loading && error && metrics.length === 0 && (
-          <>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginBottom: 10, marginTop: 4 }}>
-              Expected metrics when backend is available:
+          <div style={{ padding: 20, borderTop: '1px solid var(--b1)' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
+              Expected metrics when backend is available
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
-                { name: 'whk_events_total',           type: 'counter',   desc: 'Total events processed by status' },
-                { name: 'whk_deliveries_total',        type: 'counter',   desc: 'Total delivery attempts by endpoint' },
-                { name: 'whk_delivery_duration_ms',    type: 'histogram', desc: 'Delivery latency distribution' },
-                { name: 'whk_retry_attempts_total',    type: 'counter',   desc: 'Retry attempt count by result' },
-                { name: 'whk_dlq_size',                type: 'gauge',     desc: 'Dead letter queue depth' },
-                { name: 'whk_circuit_state',           type: 'gauge',     desc: 'Circuit breaker state (0=closed,1=open)' },
-                { name: 'whk_active_endpoints',        type: 'gauge',     desc: 'Number of active endpoints' },
-                { name: 'whk_http_requests_total',     type: 'counter',   desc: 'Inbound HTTP requests to API' },
+                { name: 'webhook_delivered_total',     type: 'counter',   desc: 'Total events delivered successfully' },
+                { name: 'webhook_failed_total',        type: 'counter',   desc: 'Total delivery failures' },
+                { name: 'webhook_delivery_duration_ms', type: 'histogram', desc: 'Delivery latency distribution' },
+                { name: 'webhook_retry_attempts',       type: 'summary',   desc: 'Retry attempt count with percentiles' },
+                { name: 'webhook_dlq_size',             type: 'gauge',     desc: 'Dead letter queue depth' },
+                { name: 'webhook_circuit_breakers_open', type: 'gauge',    desc: 'Circuit breakers currently open' },
+                { name: 'webhook_active_endpoints',     type: 'gauge',     desc: 'Number of active endpoints' },
+                { name: 'webhook_queue_size',            type: 'gauge',     desc: 'Current processing queue depth' },
               ].map(m => {
-                const typeColor = TYPE_COLOR[m.type] || 'var(--text3)';
+                const cfg = TYPE_CONFIG[m.type] || TYPE_CONFIG.counter;
                 return (
-                  <div key={m.name} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 9, padding: '10px 12px', opacity: 0.6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                      <code style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent2)' }}>{m.name}</code>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, padding: '1px 5px', borderRadius: 4,
-                        background: typeColor + '18', color: typeColor, textTransform: 'capitalize' }}>
-                        {m.type}
-                      </span>
+                  <div key={m.name} style={{
+                    background: 'var(--card2)', border: '1px solid var(--b1)', borderRadius: 'var(--r2)',
+                    padding: '10px 14px', opacity: 0.55, display: 'flex', alignItems: 'center', gap: 10,
+                  }}>
+                    <div style={{
+                      width: 26, height: 26, borderRadius: 6, background: cfg.bg, border: `1px solid ${cfg.color}20`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <cfg.icon size={12} color={cfg.color} />
                     </div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)' }}>{m.desc}</div>
+                    <div>
+                      <code style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--a)' }}>{m.name}</code>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)', marginTop: 1 }}>{m.desc}</div>
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </>
+          </div>
         )}
 
-        <div style={{ marginTop: 14, display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.18)', borderRadius: 9 }}>
-          <AlertCircle size={13} color="#f59e0b" style={{ flexShrink: 0, marginTop: 1 }} />
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text2)', lineHeight: 1.55 }}>
-            To enable Datadog or New Relic forwarding, ask your backend team to set the relevant API key environment variable and restart the server.
+        {/* Tip bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
+          borderTop: '1px solid var(--b1)', background: 'var(--card2)',
+        }}>
+          <AlertCircle size={12} color="var(--yellow)" />
+          <span style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
+            Set DATADOG_API_KEY or NEW_RELIC_LICENSE_KEY env vars on the backend to enable automatic metric forwarding every minute.
           </span>
         </div>
       </div>

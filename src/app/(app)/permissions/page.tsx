@@ -1,9 +1,9 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { permissionsApi } from '@/lib/api';
 import { CustomRole } from '@/lib/types';
-import { Shield, Plus, X, Trash2, Check, Users, Lock, Search, Minus, Eye, Layers, GitBranch } from 'lucide-react';
+import { Shield, Plus, X, Trash2, Check, Users, Lock, Search, Minus, Eye, Layers, GitBranch, ChevronDown, ChevronRight, ChevronsUpDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
@@ -51,6 +51,7 @@ function MatrixView() {
   });
   const [search, setSearch] = useState('');
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // Derive everything from API data
   const resources: string[] = matrix?.resources || [];
@@ -73,6 +74,21 @@ function MatrixView() {
     const total = resources.length * actions.length;
     return { role: rn, count, total, pct: total ? Math.round((count / total) * 100) : 0 };
   });
+
+  const toggleRes = (res: string) => setExpanded(prev => {
+    const next = new Set(prev);
+    next.has(res) ? next.delete(res) : next.add(res);
+    return next;
+  });
+
+  const allExpanded = filtered.length > 0 && filtered.every(r => expanded.has(r));
+  const toggleAll = () => {
+    if (allExpanded) {
+      setExpanded(new Set());
+    } else {
+      setExpanded(new Set(filtered));
+    }
+  };
 
   return (
     <>
@@ -131,7 +147,7 @@ function MatrixView() {
         })}
       </div>
 
-      {/* ── Search Bar ─────────────────────────────────────────────── */}
+      {/* ── Search Bar + Collapse/Expand Toggle ────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 280 }}>
           <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--t3)', pointerEvents: 'none' }} />
@@ -141,6 +157,17 @@ function MatrixView() {
             style={{ paddingLeft: 32, fontSize: 12 }}
           />
         </div>
+
+        {/* Collapse / Expand All button */}
+        <button
+          onClick={toggleAll}
+          className="btn btn-ghost btn-sm"
+          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}
+        >
+          <ChevronsUpDown size={12} />
+          {allExpanded ? 'Collapse All' : 'Expand All'}
+        </button>
+
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {roleNames.map(rn => {
@@ -155,12 +182,12 @@ function MatrixView() {
         </div>
       </div>
 
-      {/* ── Matrix Table ───────────────────────────────────────────── */}
+      {/* ── Collapsible Matrix ─────────────────────────────────────── */}
       <div className="tbl-wrap">
         <table className="tbl" style={{ width: '100%' }}>
           <thead>
             <tr>
-              <th style={{ width: 180 }}>Resource</th>
+              <th style={{ width: 220 }}>Resource</th>
               <th style={{ width: 100 }}>Action</th>
               {roleNames.map(rn => {
                 const rc = RS[rn];
@@ -177,70 +204,126 @@ function MatrixView() {
           </thead>
           <tbody>
             {filtered.map(res => {
-              const resTotal = roleNames.reduce((acc, rn) => acc + actions.filter(act => hasPerm(roles, rn, res, act)).length, 0);
-              return actions.map((act, ai) => (
-                <tr key={`${res}:${act}`}>
-                  {ai === 0 && (
-                    <td rowSpan={actions.length} style={{
-                      verticalAlign: 'top', paddingTop: 13,
-                      borderRight: '1px solid var(--b1)',
-                      background: 'rgba(91,108,248,.015)',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              const isOpen = expanded.has(res);
+              const resGranted = roleNames.reduce((acc, rn) => acc + actions.filter(act => hasPerm(roles, rn, res, act)).length, 0);
+              const resTotal = actions.length * roleNames.length;
+
+              return (
+                <Fragment key={res}>
+                  {/* ── Resource header row (always visible, clickable) ── */}
+                  <tr
+                    onClick={() => toggleRes(res)}
+                    style={{ cursor: 'pointer', background: isOpen ? 'rgba(91,108,248,.03)' : undefined }}
+                  >
+                    <td style={{ borderRight: '1px solid var(--b1)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{
-                          width: 28, height: 28, borderRadius: 7, flexShrink: 0, marginTop: 1,
+                          width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                          background: isOpen ? 'var(--abg)' : 'transparent',
+                          border: isOpen ? '1px solid var(--abd)' : '1px solid var(--b1)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all .15s ease',
+                        }}>
+                          {isOpen
+                            ? <ChevronDown size={11} color="var(--a2)" />
+                            : <ChevronRight size={11} color="var(--t3)" />
+                          }
+                        </div>
+                        <div style={{
+                          width: 26, height: 26, borderRadius: 7, flexShrink: 0,
                           background: 'var(--abg)', border: '1px solid var(--abd)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <Layers size={12} color="var(--a2)" />
+                          <Layers size={11} color="var(--a2)" />
                         </div>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--t1)', textTransform: 'capitalize' }}>
                             {res.replace(/_/g, ' ')}
                           </div>
-                          <div style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--t3)', marginTop: 2 }}>
-                            {actions.length} actions · {resTotal} grants
+                          <div style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--t3)', marginTop: 1 }}>
+                            {actions.length} actions · {resGranted}/{resTotal} grants
                           </div>
                         </div>
                       </div>
                     </td>
-                  )}
-                  <td>
-                    <span style={{
-                      fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t2)',
-                      padding: '2px 7px', borderRadius: 4, background: 'var(--card2)',
-                      textTransform: 'capitalize',
-                    }}>
-                      {act}
-                    </span>
-                  </td>
-                  {roleNames.map(rn => {
-                    const has = hasPerm(roles, rn, res, act);
-                    const rc = RS[rn];
-                    return (
-                      <td key={rn} style={{ textAlign: 'center' }}>
-                        {has ? (
-                          <div style={{
-                            display: 'inline-flex', width: 28, height: 28, borderRadius: 8,
-                            background: `${rc.color}12`, alignItems: 'center', justifyContent: 'center',
-                            border: `1px solid ${rc.color}22`,
-                            transition: 'all .15s ease',
-                          }}>
-                            <Check size={13} color={rc.color} strokeWidth={2.5} />
-                          </div>
-                        ) : (
-                          <div style={{
-                            display: 'inline-flex', width: 28, height: 28, borderRadius: 8,
-                            alignItems: 'center', justifyContent: 'center', opacity: 0.3,
-                          }}>
-                            <Minus size={10} color="var(--t3)" strokeWidth={1.5} />
-                          </div>
-                        )}
+                    {/* Summary: show compact grant badges per role in collapsed state */}
+                    <td>
+                      {!isOpen && (
+                        <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)' }}>
+                          {actions.length} actions
+                        </span>
+                      )}
+                    </td>
+                    {roleNames.map(rn => {
+                      const rc = RS[rn];
+                      const grantCount = actions.filter(act => hasPerm(roles, rn, res, act)).length;
+                      return (
+                        <td key={rn} style={{ textAlign: 'center' }}>
+                          {!isOpen ? (
+                            /* Collapsed: show count badge */
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              minWidth: 28, height: 22, borderRadius: 6, fontSize: 10, fontWeight: 700,
+                              fontFamily: 'var(--mono)',
+                              background: grantCount === actions.length ? `${rc.color}15` : grantCount > 0 ? `${rc.color}08` : 'transparent',
+                              color: grantCount > 0 ? rc.color : 'var(--t3)',
+                              border: `1px solid ${grantCount > 0 ? `${rc.color}22` : 'var(--b1)'}`,
+                              transition: 'all .15s ease',
+                            }}>
+                              {grantCount}/{actions.length}
+                            </span>
+                          ) : (
+                            /* Expanded: empty in header row */
+                            <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)' }}>
+                              {grantCount}/{actions.length}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+
+                  {/* ── Action rows (only visible when expanded) ── */}
+                  {isOpen && actions.map(act => (
+                    <tr key={`${res}:${act}`} style={{ background: 'rgba(91,108,248,.015)' }}>
+                      <td style={{ borderRight: '1px solid var(--b1)', paddingLeft: 60 }} />
+                      <td>
+                        <span style={{
+                          fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t2)',
+                          padding: '2px 7px', borderRadius: 4, background: 'var(--card2)',
+                          textTransform: 'capitalize',
+                        }}>
+                          {act}
+                        </span>
                       </td>
-                    );
-                  })}
-                </tr>
-              ));
+                      {roleNames.map(rn => {
+                        const has = hasPerm(roles, rn, res, act);
+                        const rc = RS[rn];
+                        return (
+                          <td key={rn} style={{ textAlign: 'center' }}>
+                            {has ? (
+                              <div style={{
+                                display: 'inline-flex', width: 28, height: 28, borderRadius: 8,
+                                background: `${rc.color}12`, alignItems: 'center', justifyContent: 'center',
+                                border: `1px solid ${rc.color}22`, transition: 'all .15s ease',
+                              }}>
+                                <Check size={13} color={rc.color} strokeWidth={2.5} />
+                              </div>
+                            ) : (
+                              <div style={{
+                                display: 'inline-flex', width: 28, height: 28, borderRadius: 8,
+                                alignItems: 'center', justifyContent: 'center', opacity: 0.3,
+                              }}>
+                                <Minus size={10} color="var(--t3)" strokeWidth={1.5} />
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </Fragment>
+              );
             })}
           </tbody>
         </table>
@@ -271,7 +354,7 @@ function MatrixView() {
         </div>
         <div style={{ flex: 1 }} />
         <span style={{ fontFamily: 'var(--mono)', fontSize: 8.5, color: 'var(--t3)' }}>
-          {filtered.length} resources · {filtered.length * actions.length * roleNames.length} cells
+          {expanded.size}/{filtered.length} expanded · {filtered.length} resources · {roleNames.length} roles
         </span>
       </div>
     </>

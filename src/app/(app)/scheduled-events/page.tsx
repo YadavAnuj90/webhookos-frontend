@@ -37,7 +37,7 @@ function PriorityDot({ p }: { p: EventPriority }) {
 function ScheduleModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
   const { data: endpoints } = useQuery({ queryKey: ['endpoints-list'], queryFn: () => endpointsApi.list(PID) });
-  const eps = endpoints?.data || endpoints || [];
+  const eps = endpoints?.endpoints || endpoints?.data || (Array.isArray(endpoints) ? endpoints : []);
 
   const [form, setForm] = useState({
     endpointId: '', eventType: 'payment.success',
@@ -128,7 +128,7 @@ export default function ScheduledEventsPage() {
     queryKey: ['scheduled-events', statusFilter, page],
     queryFn: () => schedulingApi.list(PID, { page, limit: 20, status: statusFilter || undefined }),
   });
-  const events: ScheduledEvent[] = data?.data || data || [];
+  const events: ScheduledEvent[] = data?.events || data?.data || (Array.isArray(data) ? data : []);
   const total = data?.total || events.length;
 
   const cancelMut = useMutation({
@@ -161,7 +161,7 @@ export default function ScheduledEventsPage() {
       </div>
 
       {/* Table */}
-      {isLoading ? <SkeletonTable rows={6} cols={6}/> : events.length === 0 ? (
+      {isLoading ? <div className="tbl-wrap"><table className="tbl"><thead><tr>{['Event Type','Endpoint','Scheduled For','Priority','Status',''].map(h=><th key={h}>{h}</th>)}</tr></thead><SkeletonTable rows={6} cols={6}/></table></div> : events.length === 0 ? (
         <Empty title="No scheduled events" sub="Schedule your first webhook for future delivery." action={<button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)}><Plus size={11}/>Schedule Event</button>}/>
       ) : (
         <div className="card" style={{ padding:0,overflow:'hidden' }}>
