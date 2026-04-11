@@ -1115,7 +1115,7 @@ function Navbar() {
           <span style={{ fontWeight: 800, fontSize: 15, color: '#f8fafc', letterSpacing: '-.3px' }}>WebhookOS</span>
         </Link>
         <div className="lp-hide-mob" style={{ display: 'flex', alignItems: 'center', gap: 24, flex: 1, marginLeft: 8 }}>
-          {[['Features', '#features'], ['AI', '#ai'], ['Pricing', '#pricing'], ['Docs', '#']].map(([l, h]) => (
+          {[['Features', '#features'], ['AI', '#ai'], ['Pricing', '#pricing'], ['Careers', '/careers'], ['Docs', '#']].map(([l, h]) => (
             <a key={l} href={h} style={{ fontSize: 13.5, fontWeight: 500, color: '#64748b', textDecoration: 'none', transition: 'color .2s' }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f8fafc'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#64748b'}>{l}</a>
@@ -1131,7 +1131,7 @@ function Navbar() {
       </div>
       {mob && (
         <div style={{ background: 'rgba(2,8,23,.97)', borderTop: '1px solid rgba(99,102,241,.1)', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {[['Features', '#features'], ['AI', '#ai'], ['Pricing', '#pricing'], ['Docs', '#']].map(([l, h]) => (
+          {[['Features', '#features'], ['AI', '#ai'], ['Pricing', '#pricing'], ['Careers', '/careers'], ['Docs', '#']].map(([l, h]) => (
             <a key={l} href={h} style={{ color: '#94a3b8', textDecoration: 'none', fontSize: 15 }} onClick={() => setMob(false)}>{l}</a>
           ))}
           <Link href="/auth/login" style={{ color: '#a5b4fc', textDecoration: 'none', fontSize: 15 }}>Sign In</Link>
@@ -1904,7 +1904,12 @@ function CTABanner() {
 
 // ─── FOOTER ──────────────────────────────────────────────────────────────────
 function Footer() {
-  const links: Record<string, string[]> = { 'Product': ['Features', 'Pricing', 'Changelog', 'Roadmap'], 'Developers': ['Documentation', 'API Reference', 'SDKs', 'Status'], 'Company': ['About', 'Blog', 'Careers', 'Contact'], 'Legal': ['Privacy', 'Terms', 'Security', 'Cookies'] };
+  const links: Record<string, { label: string; href: string }[]> = {
+    'Product': [{ label: 'Features', href: '#features' }, { label: 'Pricing', href: '#pricing' }, { label: 'Changelog', href: '#' }, { label: 'Roadmap', href: '#' }],
+    'Developers': [{ label: 'Documentation', href: '#' }, { label: 'API Reference', href: '#' }, { label: 'SDKs', href: '#' }, { label: 'Status', href: '#' }],
+    'Company': [{ label: 'About', href: '#' }, { label: 'Blog', href: '#' }, { label: 'Careers', href: '/careers' }, { label: 'Contact', href: '#' }],
+    'Legal': [{ label: 'Privacy', href: '#' }, { label: 'Terms', href: '#' }, { label: 'Security', href: '#' }, { label: 'Cookies', href: '#' }],
+  };
   return (
     <footer style={{ borderTop: '1px solid rgba(99,102,241,.08)', padding: '64px 0 32px', background: 'rgba(2,8,20,.85)' }}>
       <div className="lp-wrap">
@@ -1924,9 +1929,9 @@ function Footer() {
               <div style={{ fontWeight: 700, fontSize: 11.5, color: '#f1f5f9', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '.06em' }}>{section}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {items.map(item => (
-                  <a key={item} href="#" style={{ fontSize: 13, color: '#334155', textDecoration: 'none', transition: 'color .15s' }}
+                  <a key={item.label} href={item.href} style={{ fontSize: 13, color: '#334155', textDecoration: 'none', transition: 'color .15s' }}
                     onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#64748b'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#334155'}>{item}</a>
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#334155'}>{item.label}</a>
                 ))}
               </div>
             </div>

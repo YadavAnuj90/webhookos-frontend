@@ -15,7 +15,7 @@ import {
   ChevronRight, X, Check, Info, AlertCircle, Menu, Users, FileText,
   Key, BellRing, FlaskConical, Shuffle, ExternalLink, BarChart2,
   ChevronDown, Plus, Building2, CheckCheck, Sun, Moon,
-  Tag, Webhook, Radio, Gauge, Receipt, Coins, Store, Calendar, Lock,
+  Tag, Webhook, Radio, Gauge, Receipt, Coins, Store, Calendar, Lock, Briefcase,
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -58,6 +58,7 @@ const BILLING_NAV = [
 const ADMIN_NAV = [
   { href: '/admin/users', icon: Users, label: 'Users' },
   { href: '/admin/audit', icon: Shield, label: 'Audit Log' },
+  { href: '/admin/careers', icon: Briefcase, label: 'Careers' },
 ];
 
 function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {

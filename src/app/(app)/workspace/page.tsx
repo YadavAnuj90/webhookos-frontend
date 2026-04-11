@@ -2,13 +2,15 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { workspacesApi } from '@/lib/api';
-import { Building2, Plus, Users, Mail, Trash2, Crown, Shield, Code, Eye, Send, Copy, Check } from 'lucide-react';
+import { useAuth } from '@/lib/store';
+import { Building2, Plus, Users, Mail, Trash2, Crown, Shield, Code, Eye, Copy, Check, KeyRound, Lock, XCircle } from 'lucide-react';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 
 const ROLE_ICONS: any = { owner: Crown, admin: Shield, developer: Code, viewer: Eye };
 const ROLE_COLORS: any = { owner: '#f59e0b', admin: '#f87171', developer: '#60a5fa', viewer: '#94a3b8' };
 
 export default function WorkspacePage() {
+  const { user } = useAuth();
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
   const [invites, setInvites] = useState<any[]>([]);
@@ -17,32 +19,77 @@ export default function WorkspacePage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [inviteResult, setInviteResult] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'url' | 'otp' | null>(null);
   const [createForm, setCreateForm] = useState({ name: '', description: '' });
   const [inviteForm, setInviteForm] = useState({ email: '', role: 'developer' });
 
+  const isEnterprise = user?.plan === 'enterprise' || user?.role === 'super_admin';
+
   const load = async () => {
-    try { const d = await workspacesApi.list(); const arr = Array.isArray(d) ? d : []; setWorkspaces(arr); if (arr[0] && !selected) { setSelected(arr[0]); loadInvites(arr[0]._id); } } catch (e: any) { toast.error('Could not load workspaces'); }
+    try {
+      const d = await workspacesApi.list();
+      const arr = Array.isArray(d) ? d : [];
+      setWorkspaces(arr);
+      if (arr[0] && !selected) { setSelected(arr[0]); loadInvites(arr[0]._id); }
+    } catch { toast.error('Could not load workspaces'); }
     finally { setFetching(false); }
   };
-  const loadInvites = async (id: string) => { try { const d = await workspacesApi.listInvites(id); setInvites(Array.isArray(d) ? d : []); } catch (e: any) { toast.error('Could not load team members'); } };
+
+  const loadInvites = async (id: string) => {
+    try { const d = await workspacesApi.listInvites(id); setInvites(Array.isArray(d) ? d : []); }
+    catch { /* ignore */ }
+  };
+
   useEffect(() => { load(); }, []);
 
   const createWs = async () => {
     setLoading(true);
-    try { await workspacesApi.create(createForm); setShowCreate(false); setCreateForm({ name: '', description: '' }); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not create workspace'); }
+    try {
+      await workspacesApi.create(createForm);
+      setShowCreate(false);
+      setCreateForm({ name: '', description: '' });
+      await load();
+      toast.success('Workspace created');
+    } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not create workspace'); }
     finally { setLoading(false); }
   };
 
   const invite = async () => {
     setLoading(true);
-    try { const r = await workspacesApi.invite(selected._id, inviteForm); setInviteResult(r); setInviteForm({ email: '', role: 'developer' }); await loadInvites(selected._id); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not send invite'); }
+    try {
+      const r = await workspacesApi.invite(selected._id, inviteForm);
+      setInviteResult(r);
+      setInviteForm({ email: '', role: 'developer' });
+      await loadInvites(selected._id);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || 'Could not send invite';
+      toast.error(msg);
+    }
     finally { setLoading(false); }
   };
 
-  const removeMember = async (uid: string) => { if (!confirm('Remove this member?')) return; try { await workspacesApi.removeMember(selected._id, uid); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not remove member'); } };
-  const updateRole = async (uid: string, role: string) => { try { await workspacesApi.updateRole(selected._id, uid, role); await load(); } catch (e: any) { toast.error(e?.response?.data?.message || 'Could not update role'); } };
-  const copyInvite = (url: string) => { navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const removeMember = async (uid: string) => {
+    if (!confirm('Remove this member?')) return;
+    try { await workspacesApi.removeMember(selected._id, uid); await load(); toast.success('Member removed'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Could not remove member'); }
+  };
+
+  const updateRole = async (uid: string, role: string) => {
+    try { await workspacesApi.updateRole(selected._id, uid, role); await load(); toast.success('Role updated'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Could not update role'); }
+  };
+
+  const revokeInvite = async (inviteId: string) => {
+    if (!confirm('Revoke this invite?')) return;
+    try { await workspacesApi.revokeInvite(selected._id, inviteId); await loadInvites(selected._id); toast.success('Invite revoked'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Could not revoke invite'); }
+  };
+
+  const copyText = (text: string, which: 'url' | 'otp') => {
+    navigator.clipboard.writeText(text);
+    setCopied(which);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   const S: any = {
     card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12 },
@@ -58,7 +105,10 @@ export default function WorkspacePage() {
           <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Building2 size={18} color="#fff" /></div>
           <div>
             <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, color: 'var(--text)', margin: 0 }}>Workspace</h1>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)', margin: 0 }}>Manage your organizations, members, and invitations</p>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)', margin: 0 }}>
+              Manage your team, invite members, and control access
+              {!isEnterprise && <span style={{ color: '#f59e0b', marginLeft: 6 }}>(Enterprise plan required for team invites)</span>}
+            </p>
           </div>
         </div>
         <button onClick={() => setShowCreate(true)} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', borderRadius: 9, background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', border: 'none', color: '#fff', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -101,10 +151,27 @@ export default function WorkspacePage() {
                 {selected.description && <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{selected.description}</div>}
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', marginTop: 3 }}>ID: {selected._id}</div>
               </div>
-              <button onClick={() => setShowInvite(true)} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px', borderRadius: 8, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: 'var(--accent2)', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                <Mail size={13} />Invite Member
+              <button onClick={() => { if (!isEnterprise) { toast.error('Team invitations require an Enterprise plan. Upgrade to invite members.'); return; } setShowInvite(true); }} style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px', borderRadius: 8, background: isEnterprise ? 'rgba(99,102,241,0.12)' : 'rgba(148,163,184,0.12)', border: `1px solid ${isEnterprise ? 'rgba(99,102,241,0.25)' : 'rgba(148,163,184,0.25)'}`, color: isEnterprise ? 'var(--accent2)' : 'var(--text3)', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                {isEnterprise ? <Mail size={13} /> : <Lock size={13} />}
+                Invite Member
               </button>
             </div>
+
+            {/* Enterprise plan notice */}
+            {!isEnterprise && (
+              <div style={{ ...S.card, padding: '14px 20px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Lock size={15} color="#f59e0b" />
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: '#f59e0b' }}>Enterprise Plan Required</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+                      Team invitations, per-project roles, and OTP-based access require an Enterprise plan.
+                      Starter and Pro plans are single-user only.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Members */}
             <div style={S.card}>
@@ -131,7 +198,7 @@ export default function WorkspacePage() {
                       {m.role !== 'owner' && (
                         <>
                           <select value={m.role} onChange={e => updateRole(m.userId, e.target.value)} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 8px', fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)', cursor: 'pointer', outline: 'none' }}>
-                            <option value="admin">admin</option><option value="developer">developer</option><option value="viewer">viewer</option>
+                            <option value="admin">Admin</option><option value="developer">Developer</option><option value="viewer">Viewer</option>
                           </select>
                           <button onClick={() => removeMember(m.userId)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#f87171' }}><Trash2 size={13} /></button>
                         </>
@@ -153,9 +220,10 @@ export default function WorkspacePage() {
                     <Mail size={14} color="var(--text3)" />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text)' }}>{inv.email}</div>
-                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>Invited as {inv.role} . Expires {new Date(inv.expiresAt).toLocaleDateString()}</div>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>Invited as {inv.role} &middot; Expires {new Date(inv.expiresAt).toLocaleDateString()}</div>
                     </div>
                     <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, padding: '2px 7px', borderRadius: 5, background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontWeight: 600 }}>Pending</span>
+                    <button onClick={() => revokeInvite(inv._id)} title="Revoke invite" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#f87171' }}><XCircle size={14} /></button>
                   </div>
                 ))}
               </div>
@@ -190,8 +258,8 @@ export default function WorkspacePage() {
       {/* Invite modal */}
       {showInvite && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ ...S.card, width: 440, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
-            <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20, marginTop: 0 }}>Invite Member</h2>
+          <div style={{ ...S.card, width: 480, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20, marginTop: 0 }}>Invite Team Member</h2>
             {!inviteResult ? (
               <>
                 <div style={{ marginBottom: 14 }}>
@@ -201,10 +269,16 @@ export default function WorkspacePage() {
                 <div style={{ marginBottom: 20 }}>
                   <label style={S.label}>Role</label>
                   <select value={inviteForm.role} onChange={e => setInviteForm(f => ({ ...f, role: e.target.value }))} style={S.select}>
-                    <option value="admin">Admin -- can manage everything</option>
-                    <option value="developer">Developer -- can create/edit</option>
-                    <option value="viewer">Viewer -- read-only</option>
+                    <option value="admin">Admin -- can manage endpoints, events, invite members</option>
+                    <option value="developer">Developer -- can create/edit endpoints and events</option>
+                    <option value="viewer">Viewer -- read-only access</option>
                   </select>
+                </div>
+                <div style={{ padding: 12, borderRadius: 8, background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', marginBottom: 20 }}>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)' }}>
+                    The invitee will receive both an <strong style={{ color: 'var(--text2)' }}>invite link</strong> and a <strong style={{ color: 'var(--text2)' }}>6-digit OTP</strong>.
+                    Share the OTP via a separate channel (SMS, WhatsApp, Slack) for added security.
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                   <button onClick={() => setShowInvite(false)} style={{ padding: '9px 20px', borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text2)', fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
@@ -214,14 +288,33 @@ export default function WorkspacePage() {
             ) : (
               <div>
                 <div style={{ padding: 14, borderRadius: 10, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', marginBottom: 14 }}>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: '#4ade80', marginBottom: 6 }}>  Invite link created</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>Share this link with your teammate:</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: '#4ade80', marginBottom: 10 }}>Invite created successfully</div>
+
+                  {/* Invite link */}
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginBottom: 6 }}>Share this invite link:</div>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
                     <code style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 10px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inviteResult.inviteUrl}</code>
-                    <button onClick={() => copyInvite(inviteResult.inviteUrl)} style={{ padding: '7px 12px', borderRadius: 6, background: 'var(--bg3)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)' }}>
-                      {copied ? <><Check size={11} color="#4ade80" />Copied</> : <><Copy size={11} />Copy</>}
+                    <button onClick={() => copyText(inviteResult.inviteUrl, 'url')} style={{ padding: '7px 12px', borderRadius: 6, background: 'var(--bg3)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)' }}>
+                      {copied === 'url' ? <><Check size={11} color="#4ade80" />Copied</> : <><Copy size={11} />Copy</>}
                     </button>
                   </div>
+
+                  {/* OTP */}
+                  {inviteResult.otp && (
+                    <>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <KeyRound size={11} />Or share this OTP via secondary channel:
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <div style={{ flex: 1, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 800, color: '#f59e0b', letterSpacing: 6, textAlign: 'center' }}>
+                          {inviteResult.otp}
+                        </div>
+                        <button onClick={() => copyText(inviteResult.otp, 'otp')} style={{ padding: '7px 12px', borderRadius: 6, background: 'var(--bg3)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)' }}>
+                          {copied === 'otp' ? <><Check size={11} color="#4ade80" />Copied</> : <><Copy size={11} />Copy</>}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <button onClick={() => { setShowInvite(false); setInviteResult(null); }} style={{ width: '100%', padding: '10px', borderRadius: 8, background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', border: 'none', color: '#fff', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Done</button>
               </div>

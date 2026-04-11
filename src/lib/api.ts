@@ -159,6 +159,25 @@ export const billingApi = {
   createResellerPlan:    (d: any)  => api.post('/billing/reseller/plans', d).then(r => r.data),
 };
 
+// ── Careers (public + admin) ─────────────────────────────────────────────────
+export const careersApi = {
+  // Public (no auth)
+  listJobs:        (p?: any) => api.get('/careers/jobs', { params: p }).then(r => r.data),
+  getJob:          (slug: string) => api.get(`/careers/jobs/${slug}`).then(r => r.data),
+  apply:           (data: FormData) => api.post('/careers/apply', data, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data),
+  // Admin
+  adminStats:      ()        => api.get('/admin/careers/stats').then(r => r.data),
+  adminListJobs:   (p?: any) => api.get('/admin/careers/jobs', { params: p }).then(r => r.data),
+  adminCreateJob:  (d: any)  => api.post('/admin/careers/jobs', d).then(r => r.data),
+  adminUpdateJob:  (id: string, d: any) => api.patch(`/admin/careers/jobs/${id}`, d).then(r => r.data),
+  adminPublishJob: (id: string) => api.post(`/admin/careers/jobs/${id}/publish`).then(r => r.data),
+  adminCloseJob:   (id: string) => api.post(`/admin/careers/jobs/${id}/close`).then(r => r.data),
+  adminDeleteJob:  (id: string) => api.delete(`/admin/careers/jobs/${id}`).then(r => r.data),
+  adminListApps:   (p?: any) => api.get('/admin/careers/applications', { params: p }).then(r => r.data),
+  adminGetApp:     (id: string) => api.get(`/admin/careers/applications/${id}`).then(r => r.data),
+  adminUpdateApp:  (id: string, d: any) => api.patch(`/admin/careers/applications/${id}/status`, d).then(r => r.data),
+};
+
 export const auditApi = {
   myHistory: (p?: any) => api.get('/audit/me', { params: p }).then(r => r.data),
   systemHistory: (p?: any) => api.get('/audit/system', { params: p }).then(r => r.data),
@@ -174,11 +193,24 @@ export const workspacesApi = {
   get: (id: string) => api.get(`/workspaces/${id}`).then(r => r.data),
   update: (id: string, d: any) => api.put(`/workspaces/${id}`, d).then(r => r.data),
   delete: (id: string) => api.delete(`/workspaces/${id}`).then(r => r.data),
+  // Team invites (Enterprise plan required)
   invite: (id: string, d: any) => api.post(`/workspaces/${id}/invite`, d).then(r => r.data),
   acceptInvite: (token: string) => api.post(`/workspaces/invite/${token}/accept`).then(r => r.data),
+  acceptInviteByOtp: (id: string, otp: string) => api.post(`/workspaces/${id}/invite/verify-otp`, { otp }).then(r => r.data),
   listInvites: (id: string) => api.get(`/workspaces/${id}/invites`).then(r => r.data),
+  revokeInvite: (id: string, inviteId: string) => api.delete(`/workspaces/${id}/invites/${inviteId}`).then(r => r.data),
   removeMember: (id: string, uid: string) => api.delete(`/workspaces/${id}/members/${uid}`).then(r => r.data),
   updateRole: (id: string, uid: string, role: string) => api.patch(`/workspaces/${id}/members/${uid}/role`, { role }).then(r => r.data),
+};
+
+// Project-level member management (resource-scoped RBAC)
+export const projectMembersApi = {
+  addMember: (projectId: string, userId: string, role: string) =>
+    api.post(`/projects/${projectId}/members`, { userId, role }).then(r => r.data),
+  removeMember: (projectId: string, userId: string) =>
+    api.delete(`/projects/${projectId}/members/${userId}`).then(r => r.data),
+  updateRole: (projectId: string, userId: string, role: string) =>
+    api.patch(`/projects/${projectId}/members/${userId}/role`, { role }).then(r => r.data),
 };
 
 export const apiKeysApi = {
