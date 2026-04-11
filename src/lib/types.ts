@@ -451,6 +451,7 @@ export interface CreditPackage {
   bonusCredits: number;
   price: number;
   description: string;
+  contactSales?: boolean;
 }
 
 export interface CreditTransaction {

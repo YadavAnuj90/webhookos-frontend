@@ -359,6 +359,32 @@ textarea.input{resize:vertical;min-height:80px}
 [data-theme="light"] .nav-item:hover{background:rgba(99,102,241,.07) !important;color:var(--t2) !important}
 [data-theme="light"] .nav-item-active{background:rgba(99,102,241,.11) !important}
 
+/* ═══ BILLING PAGE RESPONSIVE ═══ */
+.billing-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px}
+.billing-plans{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.billing-sub{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.billing-sub-actions{display:flex;gap:8px;flex-shrink:0}
+.billing-foot{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+.billing-header-btns{display:flex;gap:8px}
+
+@media(max-width:1200px){
+  .billing-plans{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:900px){
+  .billing-quick{grid-template-columns:1fr 1fr}
+  .billing-sub{flex-direction:column;align-items:flex-start}
+  .billing-sub-actions{width:100%}
+  .billing-sub-actions .btn{flex:1}
+}
+@media(max-width:640px){
+  .billing-plans{grid-template-columns:1fr}
+  .billing-quick{grid-template-columns:1fr}
+  .billing-header-btns{width:100%}
+  .billing-header-btns .btn{flex:1;justify-content:center}
+  .billing-foot{flex-direction:column;gap:6px}
+  .ph{flex-direction:column;gap:8px}
+}
+
 /* Utility */
 .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mono{font-family:var(--mono)}

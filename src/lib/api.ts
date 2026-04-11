@@ -137,6 +137,10 @@ export const billingApi = {
   getTransactions:      (p?: any) => api.get('/billing/credits/transactions', { params: p }).then(r => r.data),
   updateAutoTopUp:      (d: any)  => api.patch('/billing/credits/auto-topup', d).then(r => r.data),
 
+  // ── Sales Inquiry (Enterprise Contact Sales) ──────────────────────────────
+  submitSalesInquiry:   (d: any)  => api.post('/billing/sales-inquiry', d).then(r => r.data),
+  getMyInquiries:       ()        => api.get('/billing/sales-inquiry/mine').then(r => r.data),
+
   // ── Invoices ───────────────────────────────────────────────────────────────
   getInvoices: ()             => api.get('/billing/invoices').then(r => r.data),
   getInvoice:  (id: string)   => api.get(`/billing/invoices/${id}`).then(r => r.data),

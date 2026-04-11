@@ -6,6 +6,7 @@ import { authApi } from '@/lib/api';
 import { useAuth } from '@/lib/store';
 import { Activity, Eye, EyeOff, Check, ArrowRight, Sparkles, Zap, Shield, BarChart3 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SectionMascot } from '@/components/Mascots';
 
 const CSS = `
   @keyframes reg-orb    { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(40px,-30px) scale(1.08)} 66%{transform:translate(-25px,20px) scale(.94)} }
@@ -173,13 +174,14 @@ export default function RegisterPage() {
         <div className="reg-orb1" />
         <div className="reg-orb2" />
         <div className="reg-orb3" />
-
         {/* ── LEFT PANEL ─────────────────────────────── */}
         <div className="reg-left">
           <div className="reg-logo">
             <div className="reg-logo-icon"><Activity size={17} color="#fff" /></div>
             <span className="reg-logo-text">WebhookOS</span>
           </div>
+
+          <SectionMascot type="cat" scale={1.7} />
 
           <div className="reg-badge">
             <div className="reg-badge-dot" />

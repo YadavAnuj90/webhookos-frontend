@@ -6,6 +6,7 @@ import { authApi } from '@/lib/api';
 import { useAuth } from '@/lib/store';
 import { Activity, Eye, EyeOff, Zap, Shield, BarChart3, RefreshCw, ArrowRight, Lock, Cpu } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SectionMascot } from '@/components/Mascots';
 
 const CSS = `
   @keyframes auth-orb { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(40px,-30px) scale(1.08)} 66%{transform:translate(-25px,20px) scale(.94)} }
@@ -165,13 +166,14 @@ export default function LoginPage() {
         <div className="auth-orb1" />
         <div className="auth-orb2" />
         <div className="auth-orb3" />
-
         {/* ── LEFT PANEL ─────────────────────────────── */}
         <div className="auth-left">
           <div className="auth-logo">
             <div className="auth-logo-icon"><Activity size={17} color="#fff" /></div>
             <span className="auth-logo-text">WebhookOS</span>
           </div>
+
+          <SectionMascot type="astronaut" scale={1.8} />
 
           <div className="auth-badge">
             <div className="auth-badge-dot" />

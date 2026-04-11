@@ -8,6 +8,7 @@ import {
   Globe, Activity, Code2, Layers, Star, X,
   Sparkles, Brain, FileJson, SearchX, Wand2, ChevronRight,
 } from 'lucide-react';
+import { FloatingMascots, SectionMascot } from '@/components/Mascots';
 
 // ─── CSS ─────────────────────────────────────────────────────────────────────
 const CSS = `
@@ -579,10 +580,11 @@ function BentoFeatures() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref);
   return (
-    <section id="features" style={{ padding: '96px 0 80px' }}>
+    <section id="features" style={{ padding: '96px 0 80px', position: 'relative', overflow: 'hidden' }}>
       <div className="lp-wrap">
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <SectionMascot type="duck" scale={1.6} />
             <span className="lp-sec-label">// CAPABILITIES</span>
             <h2 className="lp-sec-title" style={{ margin: '0 auto 14px' }}>
               Everything you need for<br /><span className="lp-grad-text">reliable webhook delivery</span>
@@ -1157,6 +1159,17 @@ function Hero() {
       <AuroraBg />
       {/* Particle network */}
       <ParticleCanvas />
+      {/* Hero: just the Astronaut — "reliable infrastructure floating in space" */}
+      <FloatingMascots config={{
+        astronaut: { top: '6%', left: '3%', scale: 1.15 },
+        sparkles: [
+          { top: '8%', left: '12%', delay: '0s', color: '#a78bfa' },
+          { top: '80%', left: '4%', delay: '1.5s' },
+        ],
+        stars: [
+          { top: '14%', left: '8%', delay: '0.5s', size: 7, color: '#fbbf24' },
+        ],
+      }} />
       {/* Grid */}
       <div className="lp-grid" style={{ position: 'absolute', inset: 0, opacity: .35 }} />
       <div style={{ position: 'absolute', top: '48%', left: 0, right: 0, height: 1, background: 'linear-gradient(90deg,transparent,rgba(99,102,241,.12),transparent)', pointerEvents: 'none' }} />
@@ -1590,8 +1603,11 @@ function LiveDemo() {
 // ─── CODE SECTION ────────────────────────────────────────────────────────────
 function CodeSection() {
   return (
-    <section style={{ padding: '80px 0', background: 'rgba(5,10,22,.7)' }}>
+    <section style={{ padding: '80px 0', background: 'rgba(5,10,22,.7)', position: 'relative', overflow: 'hidden' }}>
       <div className="lp-wrap">
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <SectionMascot type="fox" scale={1.5} />
+        </div>
         <div className="lp-code-flex" style={{ display: 'flex', alignItems: 'center', gap: 60 }}>
           <Reveal className="lp-code-left">
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -1679,6 +1695,7 @@ function AiSection() {
       <div className="lp-wrap" style={{ position: 'relative', zIndex: 1 }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <SectionMascot type="robot" scale={1.7} />
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '6px 16px', borderRadius: 100, background: 'rgba(168,85,247,.1)', border: '1px solid rgba(168,85,247,.28)', marginBottom: 18 }}>
               <Sparkles size={13} color="#a855f7" />
               <span style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.14em', color: '#a855f7' }}>AI-Powered Intelligence</span>
@@ -1774,24 +1791,25 @@ function HowItWorks() {
 
 // ─── PRICING ─────────────────────────────────────────────────────────────────
 const PLANS = [
-  { name: 'Starter', price: '$0', inr: '₹0/mo', popular: false, desc: 'For side projects & early testing.', features: ['10,000 events/month', '3 endpoints', '5-retry backoff', 'HMAC signing', 'Basic analytics', 'Community support'], cta: 'Start Free', href: '/auth/register' },
-  { name: 'Pro', price: '$49', inr: '₹4,100/mo', popular: true, desc: 'For teams shipping to production.', features: ['500,000 events/month', 'Unlimited endpoints', 'Dead Letter Queue', 'Payload transformations', 'Advanced analytics', 'Priority email support'], cta: 'Start Pro Trial', href: '/auth/register' },
-  { name: 'Business', price: '$199', inr: '₹16,600/mo', popular: false, desc: 'High-volume with SLA guarantees.', features: ['5M events/month', 'Everything in Pro', 'Circuit breaker', '99.99% uptime SLA', 'Custom integrations', 'Dedicated Slack support'], cta: 'Contact Sales', href: '/auth/register' },
+  { name: 'Starter', price: '₹999', popular: false, desc: 'For side projects & early testing.', features: ['50,000 events/mo', '20 endpoints', '30-day retention', 'HMAC signing', 'Basic analytics', 'Community support'], cta: 'Start Free', href: '/auth/register' },
+  { name: 'Pro', price: '₹2,999', popular: true, desc: 'For teams shipping to production.', features: ['500,000 events/mo', '100 endpoints', '90-day retention', 'AI features included', 'Advanced analytics', 'Priority email support'], cta: 'Start Pro Trial', href: '/auth/register' },
+  { name: 'Enterprise', price: 'Custom', popular: false, desc: 'High-volume with SLA guarantees.', features: ['Unlimited events/mo', 'Unlimited endpoints', '365-day retention', 'AI features included', 'Reseller portal', 'Dedicated Slack support'], cta: 'Contact Sales', href: '/auth/register' },
 ];
 
 function Pricing() {
   return (
-    <section id="pricing" style={{ padding: '88px 0' }}>
+    <section id="pricing" style={{ padding: '88px 0', position: 'relative', overflow: 'hidden' }}>
       <div className="lp-wrap">
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <SectionMascot type="cat" scale={1.5} />
             <span className="lp-sec-label" style={{ display: 'block', textAlign: 'center' }}>// PRICING</span>
             <h2 className="lp-sec-title" style={{ textAlign: 'center', margin: '0 auto 14px' }}>Simple pricing, <span className="lp-grad-text">no surprises</span></h2>
             <p className="lp-sec-sub" style={{ textAlign: 'center', margin: '0 auto' }}>Pay only for what you use. Upgrade or downgrade anytime.</p>
           </div>
         </Reveal>
         <div className="lp-price-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 18, alignItems: 'start' }}>
-          {PLANS.map(({ name, price, inr, popular, desc, features, cta, href }, i) => (
+          {PLANS.map(({ name, price, popular, desc, features, cta, href }, i) => (
             <Reveal key={name} delay={i * 90}>
               <div className={`lp-card ${popular ? 'lp-price-popular' : ''}`} style={{ padding: '32px 26px', position: 'relative', animation: popular ? 'lp-border-breathe 3s ease infinite' : undefined }}>
                 {popular && <div className="lp-popular-tag">⚡ Most Popular</div>}
@@ -1800,9 +1818,8 @@ function Pricing() {
                   <div style={{ fontSize: 13, color: '#475569', marginBottom: 16 }}>{desc}</div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
                     <span style={{ fontSize: 'clamp(30px,4vw,44px)', fontWeight: 900, color: '#f8fafc', letterSpacing: '-2px' }}>{price}</span>
-                    <span style={{ fontSize: 14, color: '#334155' }}>/mo</span>
+                    {price !== 'Custom' && <span style={{ fontSize: 14, color: '#334155' }}>/mo</span>}
                   </div>
-                  <div style={{ fontFamily: 'JetBrains Mono,monospace', fontSize: 11, color: '#334155', marginTop: 2 }}>{inr}</div>
                 </div>
                 <Link href={href} className={popular ? 'lp-btn-pri' : 'lp-btn-out'} style={{ width: '100%', justifyContent: 'center', marginBottom: 22, fontSize: 13, padding: '11px 0', display: 'flex' }}>{cta}</Link>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1862,13 +1879,14 @@ function Testimonials() {
 // ─── CTA BANNER ──────────────────────────────────────────────────────────────
 function CTABanner() {
   return (
-    <section style={{ padding: '88px 0' }}>
+    <section style={{ padding: '88px 0', position: 'relative', overflow: 'hidden' }}>
       <div className="lp-wrap">
         <Reveal>
           <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden', padding: '64px 44px', textAlign: 'center', background: 'linear-gradient(135deg,rgba(79,70,229,.14),rgba(139,92,246,.09))', border: '1px solid rgba(99,102,241,.2)' }}>
             <div className="lp-orb" style={{ width: 280, height: 280, background: 'radial-gradient(circle,rgba(79,70,229,.28),transparent)', top: -70, left: -50, animationDuration: '5s' }} />
             <div className="lp-orb" style={{ width: 240, height: 240, background: 'radial-gradient(circle,rgba(139,92,246,.2),transparent)', bottom: -50, right: -30, animationDuration: '7s', animationDelay: '1s' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
+              <SectionMascot type="owl" scale={1.5} />
               <span className="lp-sec-label" style={{ display: 'block', textAlign: 'center' }}>// GET STARTED</span>
               <h2 style={{ fontSize: 'clamp(26px,4vw,50px)', fontWeight: 900, letterSpacing: '-1.5px', color: '#f8fafc', marginBottom: 14 }}>Start delivering webhooks<br /><span className="lp-grad-text">reliably in minutes.</span></h2>
               <p style={{ fontSize: 15.5, color: '#94a3b8', margin: '0 auto 36px', maxWidth: 440 }}>Free plan, no credit card, production-grade from day one.</p>
