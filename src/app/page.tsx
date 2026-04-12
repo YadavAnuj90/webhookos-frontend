@@ -175,9 +175,13 @@ const CSS = `
   /* SCROLLBAR */
   .lp::-webkit-scrollbar{width:4px}.lp::-webkit-scrollbar-thumb{background:rgba(99,102,241,.4);border-radius:10px}
 
+  /* Mobile menu hamburger — hidden on desktop */
+  .lp-show-mob{display:none!important}
+
   /* RESPONSIVE */
   @media(max-width:900px){
     .lp-hide-mob{display:none!important}
+    .lp-show-mob{display:flex!important}
     .lp-hero-flex{flex-direction:column!important;gap:40px!important}
     .lp-feat-grid{grid-template-columns:1fr 1fr!important}
     .lp-price-grid{grid-template-columns:1fr!important}
@@ -1097,6 +1101,14 @@ function ActivityFeed() {
 }
 
 // ─── NAVBAR ──────────────────────────────────────────────────────────────────
+const NAV_LINKS: [string, string, React.ComponentType<any>, string][] = [
+  ['Features', '#features', Layers, 'What we offer'],
+  ['AI', '#ai', Sparkles, 'AI-powered debugging'],
+  ['Pricing', '#pricing', Zap, 'Plans & billing'],
+  ['Careers', '/careers', Star, 'Join the team'],
+  ['Docs', '#', Code2, 'Developer docs'],
+];
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mob, setMob] = useState(false);
@@ -1105,40 +1117,180 @@ function Navbar() {
     window.addEventListener('scroll', h);
     return () => window.removeEventListener('scroll', h);
   }, []);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mob) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mob]);
+
   return (
-    <nav className={`lp-nav ${scrolled ? 'lp-nav-on' : ''}`}>
-      <div className="lp-wrap" style={{ height: 64, display: 'flex', alignItems: 'center', gap: 28 }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', flexShrink: 0 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(79,70,229,.5)' }}>
-            <Activity size={14} color="#fff" />
+    <>
+      <nav className={`lp-nav ${scrolled ? 'lp-nav-on' : ''}`} style={{ zIndex: 1000 }}>
+        <div className="lp-wrap" style={{ height: 64, display: 'flex', alignItems: 'center', gap: 28 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', flexShrink: 0 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(79,70,229,.5)' }}>
+              <Activity size={14} color="#fff" />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 15, color: '#f8fafc', letterSpacing: '-.3px' }}>WebhookOS</span>
+          </Link>
+          <div className="lp-hide-mob" style={{ display: 'flex', alignItems: 'center', gap: 24, flex: 1, marginLeft: 8 }}>
+            {NAV_LINKS.map(([l, h]) => (
+              <a key={l} href={h} style={{ fontSize: 13.5, fontWeight: 500, color: '#64748b', textDecoration: 'none', transition: 'color .2s' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f8fafc'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#64748b'}>{l}</a>
+            ))}
           </div>
-          <span style={{ fontWeight: 800, fontSize: 15, color: '#f8fafc', letterSpacing: '-.3px' }}>WebhookOS</span>
-        </Link>
-        <div className="lp-hide-mob" style={{ display: 'flex', alignItems: 'center', gap: 24, flex: 1, marginLeft: 8 }}>
-          {[['Features', '#features'], ['AI', '#ai'], ['Pricing', '#pricing'], ['Careers', '/careers'], ['Docs', '#']].map(([l, h]) => (
-            <a key={l} href={h} style={{ fontSize: 13.5, fontWeight: 500, color: '#64748b', textDecoration: 'none', transition: 'color .2s' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f8fafc'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#64748b'}>{l}</a>
+          <div className="lp-hide-mob" style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+            <Link href="/auth/login" className="lp-btn-ghost-sm">Sign In</Link>
+            <Link href="/auth/register" className="lp-btn-sm">Start Free <ArrowRight size={12} /></Link>
+          </div>
+          {/* Hamburger / Close — animated icon */}
+          <button
+            className="lp-show-mob"
+            onClick={() => setMob(!mob)}
+            style={{
+              background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer',
+              marginLeft: 'auto', padding: 6, borderRadius: 8, position: 'relative', zIndex: 1002,
+              transition: 'color .2s, transform .3s',
+              transform: mob ? 'rotate(90deg)' : 'rotate(0deg)',
+            }}
+          >
+            {mob
+              ? <X size={20} color="#a5b4fc" />
+              : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            }
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Mobile Menu Overlay ─────────────────────────────────────────────── */}
+      <div
+        onClick={() => setMob(false)}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 998,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+          opacity: mob ? 1 : 0,
+          pointerEvents: mob ? 'auto' : 'none',
+          transition: 'opacity .3s ease',
+        }}
+      />
+      <div
+        style={{
+          position: 'fixed', top: 0, right: 0, zIndex: 999,
+          width: '280px', maxWidth: '80vw', height: '100vh',
+          background: 'rgba(8,12,32,0.95)',
+          backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+          borderLeft: '1px solid rgba(99,102,241,0.15)',
+          boxShadow: '-8px 0 40px rgba(0,0,0,0.5)',
+          transform: mob ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform .35s cubic-bezier(.4,0,.2,1)',
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Decorative gradient accent */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+          background: 'linear-gradient(90deg, #4f46e5, #7c3aed, #a855f7)',
+        }} />
+
+        {/* Header with close area */}
+        <div style={{ padding: '20px 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Activity size={11} color="#fff" />
+            </div>
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#e2e8f0', letterSpacing: '-.2px' }}>Menu</span>
+          </div>
+          <button
+            onClick={() => setMob(false)}
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background .2s' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.2)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.1)'}
+          >
+            <X size={14} color="#a5b4fc" />
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div style={{ margin: '0 20px', height: 1, background: 'rgba(99,102,241,0.1)' }} />
+
+        {/* Navigation links */}
+        <div style={{ padding: '16px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {NAV_LINKS.map(([label, href, Icon, desc], i) => (
+            <a
+              key={label}
+              href={href}
+              onClick={() => setMob(false)}
+              className="mob-nav-item"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 12px', borderRadius: 10, textDecoration: 'none',
+                transition: 'background .2s, transform .2s',
+                animationDelay: `${i * 50}ms`,
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.08)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+            >
+              <div style={{
+                width: 36, height: 36, borderRadius: 9,
+                background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <Icon size={15} color="#818cf8" />
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', lineHeight: 1.2 }}>{label}</div>
+                <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{desc}</div>
+              </div>
+              <ChevronRight size={13} color="#475569" style={{ marginLeft: 'auto', flexShrink: 0 }} />
+            </a>
           ))}
         </div>
-        <div className="lp-hide-mob" style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
-          <Link href="/auth/login" className="lp-btn-ghost-sm">Sign In</Link>
-          <Link href="/auth/register" className="lp-btn-sm">Start Free <ArrowRight size={12} /></Link>
+
+        {/* Bottom CTA section */}
+        <div style={{
+          padding: '16px 16px 32px', marginTop: 'auto',
+          borderTop: '1px solid rgba(99,102,241,0.1)',
+          display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <Link
+            href="/auth/login"
+            onClick={() => setMob(false)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '11px 16px', borderRadius: 10,
+              background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)',
+              color: '#a5b4fc', fontSize: 13.5, fontWeight: 600,
+              textDecoration: 'none', transition: 'background .2s, border-color .2s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.12)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.3)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.18)'; }}
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/auth/register"
+            onClick={() => setMob(false)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '12px 16px', borderRadius: 10,
+              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+              color: '#fff', fontSize: 13.5, fontWeight: 700,
+              textDecoration: 'none', transition: 'transform .2s, box-shadow .2s',
+              boxShadow: '0 4px 20px rgba(79,70,229,0.4)',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 28px rgba(79,70,229,0.5)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(79,70,229,0.4)'; }}
+          >
+            Start Free <ArrowRight size={13} />
+          </Link>
         </div>
-        <button onClick={() => setMob(!mob)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', marginLeft: 'auto', padding: 4 }}>
-          {mob ? <X size={20} /> : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>}
-        </button>
       </div>
-      {mob && (
-        <div style={{ background: 'rgba(2,8,23,.97)', borderTop: '1px solid rgba(99,102,241,.1)', padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {[['Features', '#features'], ['AI', '#ai'], ['Pricing', '#pricing'], ['Careers', '/careers'], ['Docs', '#']].map(([l, h]) => (
-            <a key={l} href={h} style={{ color: '#94a3b8', textDecoration: 'none', fontSize: 15 }} onClick={() => setMob(false)}>{l}</a>
-          ))}
-          <Link href="/auth/login" style={{ color: '#a5b4fc', textDecoration: 'none', fontSize: 15 }}>Sign In</Link>
-          <Link href="/auth/register" className="lp-btn-pri" style={{ justifyContent: 'center' }}>Start Free</Link>
-        </div>
-      )}
-    </nav>
+    </>
   );
 }
 

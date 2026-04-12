@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { endpointsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { MaintenanceWindow } from '@/lib/types';
 import { Globe, Plus, Pause, Play, Trash2, RotateCcw, Copy, ChevronRight, X, Check, ChevronDown, AlertCircle, Shield, Database, Cloud, GitBranch, Lock, Layers, FlaskConical, Settings2, Sparkles, CheckSquare, Square, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,8 +12,6 @@ import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import AiDebuggerModal from '@/components/ai/AiDebuggerModal';
 import PiiDetectorModal from '@/components/ai/PiiDetectorModal';
-
-const PID = 'default';
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
 function SectionDivider({ label }: { label: string }) {
@@ -623,6 +622,7 @@ function EndpointBulkBar({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function EndpointsPage() {
+  const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
   const router = useRouter();
   const [page, setPage] = useState(1);

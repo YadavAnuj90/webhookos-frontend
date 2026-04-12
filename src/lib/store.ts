@@ -46,9 +46,23 @@ export const useNotifStore = create<NotifStore>()((set) => ({
   clearAll: () => set({ notifs: [] }),
 }));
 
-// useProjectStore for pages that need a project context
-interface ProjectStore { projectId: string; setProjectId: (id: string) => void; }
-export const useProjectStore = create<ProjectStore>()((set) => ({
-  projectId: 'default',
-  setProjectId: (projectId) => set({ projectId }),
-}));
+// useProjectStore for pages that need a project context.
+// Starts as 'default' — the backend resolves this to the user's real project.
+// Once the real project ID is fetched, it's persisted here.
+interface ProjectStore {
+  projectId: string;
+  projectName: string | null;
+  setProjectId: (id: string) => void;
+  setProject: (id: string, name: string) => void;
+}
+export const useProjectStore = create<ProjectStore>()(
+  persist(
+    (set) => ({
+      projectId: 'default',
+      projectName: null,
+      setProjectId: (projectId) => set({ projectId }),
+      setProject: (projectId, projectName) => set({ projectId, projectName }),
+    }),
+    { name: 'whk-project', partialize: (s) => ({ projectId: s.projectId, projectName: s.projectName }) }
+  )
+);

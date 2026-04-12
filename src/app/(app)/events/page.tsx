@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi, endpointsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { PRIORITY_CONFIG, EventPriority } from '@/lib/types';
 import { Zap, RefreshCw, Send, X, ChevronRight, Clock, Sparkles, CheckSquare, Square, Trash2, RotateCcw } from 'lucide-react';
 import AiDebuggerModal from '@/components/ai/AiDebuggerModal';
@@ -11,8 +12,6 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import EventDrawer from '@/components/ui/EventDrawer';
-
-const PID = 'default';
 
 const STATUS_OPTS = ['', 'pending', 'delivered', 'failed', 'dead', 'filtered', 'rate_limited', 'rate_queued', 'scheduled'];
 const PRIORITY_OPTS: Array<{ val: string; label: string }> = [
@@ -53,6 +52,7 @@ function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
 }
 
 function SendModal({ onClose }: { onClose: () => void }) {
+  const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
   const [form, setForm] = useState({
     endpointId: '', eventType: 'payment.success',
@@ -173,6 +173,7 @@ function BulkBar({
 }
 
 export default function EventsPage() {
+  const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');

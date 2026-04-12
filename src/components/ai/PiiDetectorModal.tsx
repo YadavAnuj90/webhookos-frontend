@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { aiApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { PiiDetectionResult, PiiDetectedField } from '@/lib/types';
 import { X, Sparkles, AlertCircle, Shield, ShieldCheck, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAiStatus } from '@/hooks/useAiStatus';
 import { AiProviderBadge, AiNotConfiguredBanner } from './AiProviderBadge';
-
-const PID = 'default';
 
 const PII_TYPE_LABELS: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   email:        { label: 'Email',        color: '#f87171', bg: 'rgba(248,113,113,.12)', icon: '📧' },
@@ -81,6 +80,7 @@ interface Props {
 }
 
 export default function PiiDetectorModal({ onClose, endpointId, onApplied }: Props) {
+  const { projectId: PID } = useProjectStore();
   const { status: aiStatus } = useAiStatus();
   const [payload, setPayload] = useState('');
   const [result, setResult] = useState<PiiDetectionResult | null>(null);

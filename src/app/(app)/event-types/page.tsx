@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventTypesApi, contractTestApi, simulateApi, endpointsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { EventType, ContractTestResult, SimulateResult } from '@/lib/types';
 import { Tag, Plus, Edit2, Trash2, CheckCircle, XCircle, X, ChevronRight, Code, Play, Copy, Check, Zap, FlaskConical, AlertCircle, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -9,7 +10,6 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import Empty from '@/components/ui/Empty';
 import AiSchemaGeneratorModal from '@/components/ai/AiSchemaGeneratorModal';
 
-const PID = 'default';
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
 function safeJson(str: string): object | null {
@@ -19,6 +19,7 @@ function prettyJson(obj: any): string { return JSON.stringify(obj, null, 2); }
 
 // ─── Validate panel ──────────────────────────────────────────────────────────
 function ValidatePanel({ eventTypeId }: { eventTypeId: string }) {
+  const { projectId: PID } = useProjectStore();
   const [payload, setPayload] = useState('{\n  \n}');
   const [result, setResult] = useState<{ valid: boolean; errors?: string[] } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -58,6 +59,7 @@ function ValidatePanel({ eventTypeId }: { eventTypeId: string }) {
 
 // ─── Contract Test panel ─────────────────────────────────────────────────────
 function ContractTestPanel({ eventTypeName }: { eventTypeName: string }) {
+  const { projectId: PID } = useProjectStore();
   const [payload, setPayload] = useState('{\n  \n}');
   const [result, setResult] = useState<(ContractTestResult & { status: number }) | null>(null);
   const [loading, setLoading] = useState(false);

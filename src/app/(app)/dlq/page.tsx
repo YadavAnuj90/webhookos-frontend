@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { AlertTriangle, RefreshCw, RotateCcw, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,9 +11,8 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import AiDebuggerModal from '@/components/ai/AiDebuggerModal';
 import DlqTriageReport from '@/components/ai/DlqTriageReport';
 
-const PID = 'default';
-
 export default function DlqPage() {
+  const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [showAiDebug, setShowAiDebug] = useState(false);

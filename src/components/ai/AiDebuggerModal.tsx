@@ -3,13 +3,12 @@ import { useState, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { aiApi, endpointsApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
+import { useProjectStore } from '@/lib/store';
 import { AiDebugResponse } from '@/lib/types';
 import { X, Copy, Check, RotateCcw, Sparkles, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAiStatus } from '@/hooks/useAiStatus';
 import { AiProviderBadge, AiNotConfiguredBanner } from './AiProviderBadge';
-
-const PID = 'default';
 
 const SEVERITY_CFG = {
   critical: { color: '#f87171', bg: 'rgba(248,113,113,.12)', label: 'CRITICAL', dot: '🔴' },
@@ -52,6 +51,7 @@ interface Props {
 }
 
 export default function AiDebuggerModal({ onClose, prefilledEndpointId }: Props) {
+  const { projectId: PID } = useProjectStore();
   const { status: aiStatus } = useAiStatus();
   const [question, setQuestion] = useState('');
   const [endpointId, setEndpointId] = useState(prefilledEndpointId || '');

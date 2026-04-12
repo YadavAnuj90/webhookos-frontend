@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { aiApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { AiGeneratedSchema } from '@/lib/types';
 import { X, Sparkles, AlertCircle, Check, Copy, ChevronRight, ChevronLeft, Tag, FileJson } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAiStatus } from '@/hooks/useAiStatus';
 import { AiProviderBadge, AiNotConfiguredBanner } from './AiProviderBadge';
-
-const PID = 'default';
 
 const EXAMPLE_PAYLOADS = [
   {
@@ -69,6 +68,7 @@ interface Props {
 }
 
 export default function AiSchemaGeneratorModal({ onClose, onSaved }: Props) {
+  const { projectId: PID } = useProjectStore();
   const { status: aiStatus } = useAiStatus();
   const [step, setStep] = useState<1 | 2>(1);
   const [payload, setPayload] = useState('');

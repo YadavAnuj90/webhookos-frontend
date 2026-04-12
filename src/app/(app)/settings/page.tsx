@@ -2,11 +2,12 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { gdprApi, endpointsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { Settings, Globe, Lock, Bell, Code, Trash2, Save, Check, ShieldCheck, X, AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PiiDetectorModal from '@/components/ai/PiiDetectorModal';
 
-const TABS = [
+const TABS: any = [
   { id: 'general',    label: 'General',        icon: Globe },
   { id: 'security',   label: 'Security',        icon: Lock },
   { id: 'compliance', label: 'Compliance',      icon: ShieldCheck },
@@ -14,8 +15,6 @@ const TABS = [
   { id: 'developer',  label: 'Developer',       icon: Code },
   { id: 'danger',     label: 'Danger Zone',     icon: Trash2 },
 ];
-
-const PID = 'default';
 
 const S: any = {
   card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, padding: '24px 28px', marginBottom: 16 },
@@ -36,6 +35,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 }
 
 export default function SettingsPage() {
+  const { projectId: PID } = useProjectStore();
   const [tab, setTab] = useState('general');
   const [saved, setSaved] = useState(false);
 

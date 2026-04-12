@@ -2,14 +2,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { schedulingApi, endpointsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { ScheduledEvent, PRIORITY_CONFIG, EventPriority } from '@/lib/types';
 import { Clock, Plus, X, Calendar, RefreshCw, Trash2, Edit3, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format, formatDistanceToNow } from 'date-fns';
 import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
-
-const PID = 'default';
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
   pending:   { bg: 'rgba(250,204,21,.12)',  color: '#facc15', label: 'Pending' },
@@ -35,6 +34,7 @@ function PriorityDot({ p }: { p: EventPriority }) {
 }
 
 function ScheduleModal({ onClose }: { onClose: () => void }) {
+  const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
   const { data: endpoints } = useQuery({ queryKey: ['endpoints-list'], queryFn: () => endpointsApi.list(PID) });
   const eps = endpoints?.endpoints || endpoints?.data || (Array.isArray(endpoints) ? endpoints : []);

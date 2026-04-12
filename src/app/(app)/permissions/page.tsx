@@ -2,13 +2,12 @@
 import { useState, useMemo, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { permissionsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { CustomRole } from '@/lib/types';
 import { Shield, Plus, X, Trash2, Check, Users, Lock, Search, Minus, Eye, Layers, GitBranch, ChevronDown, ChevronRight, ChevronsUpDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
-
-const PID = 'default';
 
 /* ─── Dynamic Role Styling ─────────────────────────────────────────────────── */
 const PALETTE = [

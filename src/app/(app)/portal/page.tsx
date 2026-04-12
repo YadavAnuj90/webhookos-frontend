@@ -221,7 +221,7 @@ function SubscriptionsModal({ token, onClose }: { token: any; onClose: () => voi
   const [ets, setEts] = useState<any[]>([]);
 
   useEffect(() => {
-    eventTypesApi.list(token.projectId || 'default')
+    eventTypesApi.list(token.projectId)
       .then((r: any) => setEts(Array.isArray(r) ? r : (r?.eventTypes || [])))
       .catch(() => { toast.error('Could not load event types'); });
   }, [token.projectId]);

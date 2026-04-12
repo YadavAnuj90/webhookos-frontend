@@ -6,11 +6,10 @@ import {
 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import toast from 'react-hot-toast';
 import StatusBadge from './StatusBadge';
 import { SkeletonDetailPanel } from './Skeleton';
-
-const PID = 'default';
 
 function JSONView({ data }: { data: any }) {
   const str = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
@@ -68,6 +67,7 @@ interface EventDrawerProps {
 }
 
 export default function EventDrawer({ event, onClose, loading = false }: EventDrawerProps) {
+  const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
   const drawerRef = useRef<HTMLDivElement>(null);
 

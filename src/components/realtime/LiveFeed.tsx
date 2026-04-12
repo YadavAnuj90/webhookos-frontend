@@ -1,5 +1,6 @@
 'use client';
 import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
+import { useProjectStore } from '@/lib/store';
 import { RealtimeDeliveryEvent } from '@/lib/types';
 import { Radio, Wifi, WifiOff, Trash2 } from 'lucide-react';
 
@@ -30,12 +31,12 @@ function EventRow({ ev }: { ev: RealtimeDeliveryEvent }) {
 }
 
 interface LiveFeedProps {
-  projectId?: string;
   endpointId?: string;
   maxHeight?: number;
 }
 
-export default function LiveFeed({ projectId = 'default', endpointId, maxHeight = 320 }: LiveFeedProps) {
+export default function LiveFeed({ endpointId, maxHeight = 320 }: LiveFeedProps) {
+  const { projectId } = useProjectStore();
   const { events, connected, clear } = useRealtimeFeed({ projectId, endpointId });
 
   return (

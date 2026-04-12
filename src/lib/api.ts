@@ -92,6 +92,7 @@ export const projectsApi = {
   update: (id: string, d: any) => api.put(`/projects/${id}`, d).then(r => r.data),
   delete: (id: string) => api.delete(`/projects/${id}`).then(r => r.data),
   addMember: (id: string, d: any) => api.post(`/projects/${id}/members`, d).then(r => r.data),
+  myDefault: () => api.get('/projects/my-default').then(r => r.data),
 };
 
 export const endpointsApi = {

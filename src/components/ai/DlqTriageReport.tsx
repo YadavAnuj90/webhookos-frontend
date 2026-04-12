@@ -2,14 +2,13 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { aiApi, eventsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { DlqTriageReport as TriageReport, DlqTriageGroup } from '@/lib/types';
 import { Sparkles, RotateCcw, AlertCircle, Zap, ChevronDown, ChevronRight, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAiStatus } from '@/hooks/useAiStatus';
 import { AiProviderBadge, AiNotConfiguredBanner } from './AiProviderBadge';
-
-const PID = 'default';
 
 const PRIORITY_CFG = {
   critical: { color: '#f87171', bg: 'rgba(248,113,113,.12)', dot: '🔴' },
@@ -87,6 +86,7 @@ function GroupCard({ group, onReplay }: { group: DlqTriageGroup; onReplay: (ids:
 }
 
 export default function DlqTriageReport() {
+  const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
   const { status: aiStatus } = useAiStatus();
   const [report, setReport] = useState<TriageReport | null>(null);

@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuthStore, useNotifStore } from '@/lib/store';
-import { workspacesApi, set402Handler, billingApi } from '@/lib/api';
+import { useAuthStore, useNotifStore, useProjectStore } from '@/lib/store';
+import { workspacesApi, set402Handler, billingApi, projectsApi } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { TrialInfo, Subscription } from '@/lib/types';
 import toast from 'react-hot-toast';
@@ -281,9 +281,10 @@ function Topbar({ toggleMobile, onOpenCmd }: { toggleMobile: () => void; onOpenC
   });
 
   // Fetch DLQ count for notification
+  const { projectId: topbarPid } = useProjectStore();
   const { data: dlqData } = useQuery({
-    queryKey: ['dlq-count'],
-    queryFn: () => import('@/lib/api').then(m => m.eventsApi.list('default', { status: 'dead', limit: 1 })),
+    queryKey: ['dlq-count', topbarPid],
+    queryFn: () => import('@/lib/api').then(m => m.eventsApi.list(topbarPid, { status: 'dead', limit: 1 })),
     refetchInterval: 60000,
     retry: 1,
   });
@@ -503,6 +504,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       router.push(`/billing?reason=${code}`);
     });
   }, [router]);
+
+  // ── Resolve default project on mount ─────────────────────────────────────
+  // Fetches the user's real default project and stores its ID,
+  // so all pages using useProjectStore get a real MongoDB ObjectId
+  // instead of the placeholder "default".
+  const { setProject } = useProjectStore();
+  useEffect(() => {
+    projectsApi.myDefault()
+      .then((p: any) => {
+        if (p?._id) setProject(p._id, p.name);
+      })
+      .catch(() => {}); // Silently fail — backend will still resolve "default" on each request
+  }, []);
 
   // Global Cmd+K / Ctrl+K listener
   useEffect(() => {

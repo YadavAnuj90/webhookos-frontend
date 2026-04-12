@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi, heatmapApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { DeliveryHeatmap, HeatmapCell } from '@/lib/types';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -14,7 +15,6 @@ import {
 } from 'lucide-react';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 
-const PID = 'default';
 const COLORS = ['#5b6cf8', '#22c55e', '#eab308', '#f43f5e', '#38bdf8', '#f97316', '#a78bfa', '#14b8a6'];
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -47,6 +47,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
    DELIVERY HEATMAP
    ══════════════════════════════════════════════════════════════════════════════ */
 function DeliveryHeatmapChart() {
+  const { projectId: PID } = useProjectStore();
   const { data, isLoading } = useQuery<DeliveryHeatmap>({
     queryKey: ['heatmap'],
     queryFn: () => heatmapApi.get(PID),
@@ -139,6 +140,7 @@ function DeliveryHeatmapChart() {
    MAIN PAGE
    ══════════════════════════════════════════════════════════════════════════════ */
 export default function AnalyticsPage() {
+  const { projectId: PID } = useProjectStore();
   const [days, setDays] = useState(7);
 
   const { data: summary, isLoading: sumLoading, isFetching } = useQuery({

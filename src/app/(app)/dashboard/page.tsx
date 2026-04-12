@@ -1,7 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi, endpointsApi, eventsApi } from '@/lib/api';
-import { useAuth } from '@/lib/store';
+import { useAuth, useProjectStore } from '@/lib/store';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Zap, Globe, AlertTriangle, TrendingUp, ArrowRight, Activity, RefreshCw, Plus, CheckCircle2, Radio } from 'lucide-react';
 import LiveFeed from '@/components/realtime/LiveFeed';
@@ -11,8 +11,6 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import OnboardingBanner from '@/components/ui/OnboardingBanner';
 import { useState, useEffect } from 'react';
-
-const PID = 'default';
 
 // ─── Live Indicator ───────────────────────────────────────────────────────────
 function LiveIndicator({ lastUpdated }: { lastUpdated: Date | null }) {
@@ -100,6 +98,7 @@ function OnboardingSteps({ hasEndpoints, hasEvents }: { hasEndpoints: boolean; h
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { projectId: PID } = useProjectStore();
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const { data: summary, isLoading: sl, dataUpdatedAt: sumUpdated } = useQuery({

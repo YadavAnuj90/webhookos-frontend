@@ -2,6 +2,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { endpointsApi, eventsApi, analyticsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar,
@@ -14,8 +15,6 @@ import { formatDistanceToNow } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { SkeletonCard, SkeletonTable } from '@/components/ui/Skeleton';
 import Link from 'next/link';
-
-const PID = 'default';
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({
@@ -83,6 +82,7 @@ function RetryBar({ count, maxRetries }: { count: number; maxRetries: number }) 
 }
 
 export default function EndpointHealthPage() {
+  const { projectId: PID } = useProjectStore();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 

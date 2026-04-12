@@ -2,13 +2,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { operationalWebhooksApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import { OperationalWebhook, OPERATIONAL_EVENTS } from '@/lib/types';
 import { Webhook, Plus, Edit2, Trash2, RotateCcw, Play, X, Copy, Check, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import Empty from '@/components/ui/Empty';
-
-const PID = 'default';
 
 // ─── Event badge ────────────────────────────────────────────────────────────
 const EVENT_COLOR: Record<string, string> = {
@@ -183,6 +182,7 @@ function OpWebhookModal({ editing, onClose }: { editing: OperationalWebhook | nu
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function OperationalWebhooksPage() {
+  const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
   const [modal, setModal]       = useState<OperationalWebhook | null | 'new'>(null);
   const [secretModal, setSecretModal] = useState<string | null>(null);

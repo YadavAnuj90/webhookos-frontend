@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { endpointsApi, eventsApi } from '@/lib/api';
+import { useProjectStore } from '@/lib/store';
 import {
   Globe, ArrowLeft, Pause, Play, Trash2, RotateCcw,
   Copy, Check, Settings, Zap, BarChart3, Edit2,
@@ -14,8 +15,6 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Empty from '@/components/ui/Empty';
 import { SkeletonCard, SkeletonTable, SkeletonText } from '@/components/ui/Skeleton';
 import EventDrawer from '@/components/ui/EventDrawer';
-
-const PID = 'default';
 
 type Tab = 'overview' | 'events' | 'settings';
 
@@ -48,6 +47,7 @@ function InfoRow({ label, value, mono = false, copy = false }: { label: string; 
 }
 
 export default function EndpointDetailPage() {
+  const { projectId: PID } = useProjectStore();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const qc = useQueryClient();
