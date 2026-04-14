@@ -2057,10 +2057,10 @@ function CTABanner() {
 // ─── FOOTER ──────────────────────────────────────────────────────────────────
 function Footer() {
   const links: Record<string, { label: string; href: string }[]> = {
-    'Product': [{ label: 'Features', href: '#features' }, { label: 'Pricing', href: '#pricing' }, { label: 'Changelog', href: '#' }, { label: 'Roadmap', href: '#' }],
-    'Developers': [{ label: 'Documentation', href: '#' }, { label: 'API Reference', href: '#' }, { label: 'SDKs', href: '#' }, { label: 'Status', href: '#' }],
-    'Company': [{ label: 'About', href: '#' }, { label: 'Blog', href: '#' }, { label: 'Careers', href: '/careers' }, { label: 'Contact', href: '#' }],
-    'Legal': [{ label: 'Privacy', href: '#' }, { label: 'Terms', href: '#' }, { label: 'Security', href: '#' }, { label: 'Cookies', href: '#' }],
+    'Product': [{ label: 'Features', href: '/features' }, { label: 'Pricing', href: '/pricing' }, { label: 'Changelog', href: '/changelog' }, { label: 'Roadmap', href: '/roadmap' }],
+    'Developers': [{ label: 'Documentation', href: '/docs' }, { label: 'API Reference', href: '/api-reference' }, { label: 'SDKs', href: '#' }, { label: 'Status', href: '/status' }],
+    'Company': [{ label: 'About', href: '/about' }, { label: 'Blog', href: '/blog' }, { label: 'Careers', href: '/careers' }, { label: 'Contact', href: '/contact' }],
+    'Legal': [{ label: 'Privacy', href: '/privacy' }, { label: 'Terms', href: '/terms' }, { label: 'Security', href: '/security' }, { label: 'Cookies', href: '/cookies' }],
   };
   return (
     <footer style={{ borderTop: '1px solid rgba(99,102,241,.08)', padding: '64px 0 32px', background: 'rgba(2,8,20,.85)' }}>
