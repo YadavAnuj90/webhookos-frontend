@@ -135,7 +135,7 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      login(res); router.push('/dashboard');
+      login(res); sessionStorage.setItem('whk-show-welcome', '1'); router.push('/dashboard');
     }
     catch (err: any) { toast.error(err.response?.data?.message || 'Login failed'); }
     finally { setLoading(false); }
@@ -145,7 +145,7 @@ export default function LoginPage() {
     e.preventDefault(); setTwoFaLoading(true);
     try {
       const res = await authApi.twoFactorLogin({ challengeToken, code: totpCode });
-      login(res); router.push('/dashboard');
+      login(res); sessionStorage.setItem('whk-show-welcome', '1'); router.push('/dashboard');
     }
     catch (err: any) { toast.error(err.response?.data?.message || 'Invalid 2FA code'); setTotpCode(''); }
     finally { setTwoFaLoading(false); }

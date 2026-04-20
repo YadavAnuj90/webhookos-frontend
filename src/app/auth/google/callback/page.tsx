@@ -82,6 +82,7 @@ function CallbackContent() {
         }
 
         // Redirect to dashboard after brief success display
+        sessionStorage.setItem('whk-show-welcome', '1');
         setTimeout(() => router.replace('/dashboard'), 1800);
       })
       .catch((err: any) => {

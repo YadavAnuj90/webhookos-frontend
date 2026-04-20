@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/store';
 import AppShell from '@/components/layout/AppShell';
 import Providers from '../providers';
+import WelcomeAnimation from '@/components/ui/WelcomeAnimation';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, setUser } = useAuth();
@@ -31,5 +32,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 
-  return <Providers><AppShell>{children}</AppShell></Providers>;
+  return (
+    <Providers>
+      <WelcomeAnimation />
+      <AppShell>{children}</AppShell>
+    </Providers>
+  );
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Activity, Menu, X, ArrowRight } from 'lucide-react';
+import { Activity, Menu, X, ArrowRight, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { newsletterApi } from '@/lib/api';
 
 const CSS = `
   .mk{font-family:'Inter',sans-serif;background:#020817;color:#f8fafc;min-height:100vh;overflow-x:hidden;position:relative}
@@ -90,6 +91,27 @@ const CSS = `
   .mk-mono{font-family:'JetBrains Mono',monospace;font-size:10px;color:#334155}
   .mk-mono-accent{font-family:'JetBrains Mono',monospace;font-size:10px;color:#4f46e5;font-weight:600}
 
+  /* NEWSLETTER CTA STRIP */
+  .mk-nl{position:relative;overflow:hidden;border-radius:20px;padding:48px 44px;margin-bottom:48px;background:linear-gradient(135deg,rgba(79,70,229,.08),rgba(124,58,237,.04));border:1px solid rgba(99,102,241,.15);backdrop-filter:blur(8px)}
+  .mk-nl-glow{position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.18) 0%,transparent 70%);top:-180px;right:-100px;pointer-events:none;animation:mk-nl-pulse 8s ease-in-out infinite}
+  .mk-nl-glow2{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.12) 0%,transparent 70%);bottom:-120px;left:-60px;pointer-events:none;animation:mk-nl-pulse 12s ease-in-out infinite reverse}
+  @keyframes mk-nl-pulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+  .mk-nl-inner{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:36px;flex-wrap:wrap}
+  .mk-nl-text{flex:1;min-width:280px}
+  .mk-nl-badge{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(165,180,252,.8);text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px;padding:4px 12px;border-radius:20px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.18)}
+  .mk-nl-title{font-size:22px;font-weight:800;color:#f8fafc;letter-spacing:-.5px;margin-bottom:8px}
+  .mk-nl-desc{font-size:14px;color:#64748b;line-height:1.65;max-width:420px}
+  .mk-nl-form{display:flex;gap:0;flex-shrink:0;max-width:420px;width:100%}
+  .mk-nl-input{flex:1;padding:14px 18px;border:1px solid rgba(99,102,241,.2);border-right:none;border-radius:12px 0 0 12px;background:rgba(15,23,42,.6);color:#f8fafc;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;min-width:0}
+  .mk-nl-input::placeholder{color:#475569}
+  .mk-nl-input:focus{border-color:rgba(99,102,241,.5);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+  .mk-nl-btn{padding:14px 24px;border:none;border-radius:0 12px 12px 0;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:opacity .2s,transform .1s;box-shadow:0 4px 18px rgba(79,70,229,.35)}
+  .mk-nl-btn:hover{opacity:.9}
+  .mk-nl-btn:active{transform:scale(.97)}
+  .mk-nl-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .mk-nl-msg{margin-top:10px;font-size:12px;display:flex;align-items:center;gap:6px}
+  @media(max-width:720px){.mk-nl-inner{flex-direction:column;text-align:center}.mk-nl-desc{margin:0 auto}.mk-nl-form{max-width:100%}}
+
   /* MOBILE MENU */
   .mk-hamburger{display:none;background:none;border:none;color:#c7d2fe;cursor:pointer;padding:8px}
   .mk-mobile-menu{display:none;position:fixed;inset:64px 0 0;background:rgba(2,8,23,.98);backdrop-filter:blur(24px);z-index:999;padding:32px 28px;flex-direction:column;gap:20px;animation:mk-up .25s ease both}
@@ -175,10 +197,83 @@ function MarketingNav() {
   );
 }
 
+function NewsletterStrip() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [msg, setMsg] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setStatus('error'); setMsg('Please enter a valid email.');
+      setTimeout(() => setStatus('idle'), 4000);
+      return;
+    }
+    setStatus('loading');
+    try {
+      const res = await newsletterApi.subscribe(email.trim());
+      setStatus('success'); setMsg(res.message || 'You\'re subscribed!'); setEmail('');
+      setTimeout(() => setStatus('idle'), 5000);
+    } catch (err: any) {
+      const m = err.response?.data?.message || 'Something went wrong. Please try again.';
+      setStatus('error'); setMsg(m);
+      setTimeout(() => setStatus('idle'), 5000);
+    }
+  };
+
+  return (
+    <div className="mk-nl">
+      <div className="mk-nl-glow" />
+      <div className="mk-nl-glow2" />
+      <div className="mk-nl-inner">
+        <div className="mk-nl-text">
+          <div className="mk-nl-badge">
+            <Send size={10} /> Newsletter
+          </div>
+          <div className="mk-nl-title">Stay in the loop</div>
+          <p className="mk-nl-desc">
+            Product updates, engineering deep-dives, and webhook best practices. Delivered monthly. No spam, unsubscribe anytime.
+          </p>
+        </div>
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, maxWidth: 420, width: '100%' }}>
+          <div className="mk-nl-form">
+            <input
+              type="email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); if (status !== 'idle' && status !== 'loading') setStatus('idle'); }}
+              placeholder="you@company.com"
+              className="mk-nl-input"
+              disabled={status === 'loading'}
+            />
+            <button type="submit" className="mk-nl-btn" disabled={status === 'loading'}>
+              {status === 'loading' ? <Loader2 size={14} style={{ animation: 'mk-nl-spin .8s linear infinite' }} /> : <Send size={14} />}
+              {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
+            </button>
+          </div>
+          {status === 'success' && (
+            <div className="mk-nl-msg" style={{ color: '#4ade80' }}>
+              <CheckCircle2 size={13} /> {msg}
+            </div>
+          )}
+          {status === 'error' && (
+            <div className="mk-nl-msg" style={{ color: '#f87171' }}>
+              <AlertCircle size={13} /> {msg}
+            </div>
+          )}
+        </form>
+      </div>
+      <style>{`@keyframes mk-nl-spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
 function MarketingFooter() {
   return (
     <footer className="mk-footer">
       <div className="mk-wrap">
+        {/* Newsletter CTA */}
+        <NewsletterStrip />
+
         <div className="mk-foot-grid">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>

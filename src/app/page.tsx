@@ -7,7 +7,9 @@ import {
   Zap, Shield, BarChart3, RefreshCw, ArrowRight, Check,
   Globe, Activity, Code2, Layers, Star, X,
   Sparkles, Brain, FileJson, SearchX, Wand2, ChevronRight,
+  Send, CheckCircle2, AlertCircle, Loader2,
 } from 'lucide-react';
+import { newsletterApi } from '@/lib/api';
 import { FloatingMascots, SectionMascot } from '@/components/Mascots';
 
 // ─── CSS ─────────────────────────────────────────────────────────────────────
@@ -2054,6 +2056,99 @@ function CTABanner() {
   );
 }
 
+// ─── FOOTER NEWSLETTER ───────────────────────────────────────────────────────
+function FooterNewsletter() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [msg, setMsg] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setStatus('error'); setMsg('Please enter a valid email address.');
+      setTimeout(() => setStatus('idle'), 4000);
+      return;
+    }
+    setStatus('loading');
+    try {
+      const res = await newsletterApi.subscribe(email.trim());
+      setStatus('success'); setMsg(res.message || "You're subscribed!"); setEmail('');
+      setTimeout(() => setStatus('idle'), 5000);
+    } catch (err: any) {
+      setStatus('error'); setMsg(err.response?.data?.message || 'Something went wrong.');
+      setTimeout(() => setStatus('idle'), 5000);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '48px 44px', marginBottom: 48,
+      background: 'linear-gradient(135deg, rgba(79,70,229,.08), rgba(124,58,237,.04))',
+      border: '1px solid rgba(99,102,241,.15)', backdropFilter: 'blur(8px)',
+    }}>
+      {/* Glows */}
+      <div style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,.18) 0%, transparent 70%)', top: -180, right: -100, pointerEvents: 'none', animation: 'lp-nl-pulse 8s ease-in-out infinite' }} />
+      <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,.12) 0%, transparent 70%)', bottom: -120, left: -60, pointerEvents: 'none', animation: 'lp-nl-pulse 12s ease-in-out infinite reverse' }} />
+
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 36, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontFamily: 'JetBrains Mono,monospace', fontSize: 10, color: 'rgba(165,180,252,.8)',
+            textTransform: 'uppercase', letterSpacing: '.12em', marginBottom: 12,
+            padding: '4px 12px', borderRadius: 20, background: 'rgba(99,102,241,.1)', border: '1px solid rgba(99,102,241,.18)',
+          }}>
+            <Send size={10} /> Newsletter
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#f8fafc', letterSpacing: '-.5px', marginBottom: 8 }}>Stay in the loop</div>
+          <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.65, maxWidth: 420, margin: 0 }}>
+            Product updates, engineering deep-dives, and webhook best practices. Delivered monthly. No spam, unsubscribe anytime.
+          </p>
+        </div>
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, maxWidth: 420, width: '100%' }}>
+          <div style={{ display: 'flex', gap: 0 }}>
+            <input
+              type="email" value={email}
+              onChange={e => { setEmail(e.target.value); if (status !== 'idle' && status !== 'loading') setStatus('idle'); }}
+              placeholder="you@company.com"
+              disabled={status === 'loading'}
+              style={{
+                flex: 1, padding: '14px 18px', border: '1px solid rgba(99,102,241,.2)', borderRight: 'none',
+                borderRadius: '12px 0 0 12px', background: 'rgba(15,23,42,.6)', color: '#f8fafc',
+                fontSize: 14, fontFamily: "'Inter',sans-serif", outline: 'none', minWidth: 0,
+              }}
+            />
+            <button type="submit" disabled={status === 'loading'} style={{
+              padding: '14px 24px', border: 'none', borderRadius: '0 12px 12px 0',
+              background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', color: '#fff',
+              fontSize: 13, fontWeight: 700, cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
+              boxShadow: '0 4px 18px rgba(79,70,229,.35)', opacity: status === 'loading' ? 0.5 : 1,
+            }}>
+              {status === 'loading' ? <Loader2 size={14} style={{ animation: 'lp-nl-spin .8s linear infinite' }} /> : <Send size={14} />}
+              {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
+            </button>
+          </div>
+          {status === 'success' && (
+            <div style={{ marginTop: 10, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, color: '#4ade80' }}>
+              <CheckCircle2 size={13} /> {msg}
+            </div>
+          )}
+          {status === 'error' && (
+            <div style={{ marginTop: 10, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, color: '#f87171' }}>
+              <AlertCircle size={13} /> {msg}
+            </div>
+          )}
+        </form>
+      </div>
+      <style>{`
+        @keyframes lp-nl-pulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+        @keyframes lp-nl-spin{to{transform:rotate(360deg)}}
+      `}</style>
+    </div>
+  );
+}
+
 // ─── FOOTER ──────────────────────────────────────────────────────────────────
 function Footer() {
   const links: Record<string, { label: string; href: string }[]> = {
@@ -2065,6 +2160,9 @@ function Footer() {
   return (
     <footer style={{ borderTop: '1px solid rgba(99,102,241,.08)', padding: '64px 0 32px', background: 'rgba(2,8,20,.85)' }}>
       <div className="lp-wrap">
+        {/* Newsletter */}
+        <FooterNewsletter />
+
         <div className="lp-footer-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: 36, marginBottom: 48 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 16 }}>

@@ -387,3 +387,8 @@ export const aiApi = {
   status: () =>
     api.get('/ai/status').then(r => r.data),
 };
+
+// ─── Newsletter ─────────────────────────────────────────────────
+export const newsletterApi = {
+  subscribe: (email: string) => api.post('/newsletter/subscribe', { email }).then(r => r.data),
+};
