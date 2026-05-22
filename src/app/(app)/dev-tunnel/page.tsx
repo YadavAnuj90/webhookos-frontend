@@ -13,9 +13,6 @@ import toast from 'react-hot-toast';
 import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   TYPES — matched to backend response shapes
-   ══════════════════════════════════════════════════════════════════════════════ */
 interface Tunnel {
   tunnelId: string;
   userId: string;
@@ -29,9 +26,6 @@ interface Tunnel {
   expiresIn?: string;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   COPY BUTTON (inline)
-   ══════════════════════════════════════════════════════════════════════════════ */
 function CopyBtn({ value, label }: { value: string; label?: string }) {
   const [ok, setOk] = useState(false);
   const copy = (e: React.MouseEvent) => {
@@ -49,23 +43,18 @@ function CopyBtn({ value, label }: { value: string; label?: string }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   MAIN PAGE
-   ══════════════════════════════════════════════════════════════════════════════ */
 export default function DevTunnelPage() {
   const qc = useQueryClient();
   const { accessToken } = useAuth();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  /* ── Fetch tunnels from API (no localStorage!) ── */
   const { data: tunnels, isLoading, isFetching } = useQuery<Tunnel[]>({
     queryKey: ['tunnels-mine'],
     queryFn: () => tunnelApi.mine(),
-    refetchInterval: 8_000,    // live-poll every 8s
+    refetchInterval: 8_000,
     refetchOnWindowFocus: true,
   });
 
-  /* ── Create tunnel ── */
   const createMut = useMutation({
     mutationFn: () => tunnelApi.create(),
     onSuccess: (d) => {
@@ -76,7 +65,6 @@ export default function DevTunnelPage() {
     onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to create tunnel'),
   });
 
-  /* ── Delete tunnel ── */
   const deleteMut = useMutation({
     mutationFn: (id: string) => tunnelApi.remove(id),
     onSuccess: (_, id) => {
@@ -87,19 +75,16 @@ export default function DevTunnelPage() {
     onError: () => toast.error('Failed to delete'),
   });
 
-  /* ── Stats ── */
   const list = tunnels || [];
   const activeTunnels = list.filter(t => t.active);
   const totalForwarded = list.reduce((s, t) => s + (t.forwarded || 0), 0);
 
-  /* ── CLI command builder ── */
   const cliCmd = (t: Tunnel) =>
     `node cli/tunnel.js --token ${accessToken || '<your-jwt-token>'} --port 3000 --tunnel ${t.tunnelId}`;
   const cliToken = accessToken ? `${accessToken.slice(0, 20)}…` : '<your-jwt-token>';
 
   return (
     <div className="page">
-      {/* ═══ Header ═══ */}
       <div className="ph">
         <div className="ph-left" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
@@ -137,7 +122,6 @@ export default function DevTunnelPage() {
         </div>
       </div>
 
-      {/* ═══ How it works ═══ */}
       <div style={{
         background: 'var(--card)', border: '1px solid var(--b1)',
         borderRadius: 'var(--r3)', padding: '16px 24px', marginBottom: 18,
@@ -173,7 +157,6 @@ export default function DevTunnelPage() {
         </div>
       </div>
 
-      {/* ═══ Stat Cards ═══ */}
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 18 }}>
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -213,10 +196,8 @@ export default function DevTunnelPage() {
         </div>
       </div>
 
-      {/* ═══ Main Content: 2-column ═══ */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 18, alignItems: 'start' }}>
 
-        {/* ── Left: Tunnel List / Table ── */}
         <div className="tbl-wrap">
           {isLoading ? (
             <table className="tbl">
@@ -281,9 +262,7 @@ export default function DevTunnelPage() {
           )}
         </div>
 
-        {/* ── Right: Info Panel ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Prerequisites */}
           <div style={{
             background: 'var(--card)', border: '1px solid var(--b1)',
             borderRadius: 'var(--r3)', padding: '18px 20px',
@@ -316,7 +295,6 @@ export default function DevTunnelPage() {
             ))}
           </div>
 
-          {/* Quick Test */}
           <div style={{
             background: 'var(--card)', border: '1px solid var(--b1)',
             borderRadius: 'var(--r3)', padding: '18px 20px',
@@ -346,7 +324,6 @@ export default function DevTunnelPage() {
             </div>
           </div>
 
-          {/* Warning */}
           <div style={{
             background: 'var(--rbg)', border: '1px solid var(--rbd)',
             borderRadius: 'var(--r3)', padding: '16px 18px',
@@ -368,9 +345,6 @@ export default function DevTunnelPage() {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   TUNNEL ROW (with expand/collapse detail)
-   ══════════════════════════════════════════════════════════════════════════════ */
 function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle, onDelete, deleting }: {
   tunnel: Tunnel; isOpen: boolean; cliToken: string; cliCmd: string;
   accessToken: string | null; onToggle: () => void; onDelete: () => void; deleting: boolean;
@@ -397,9 +371,7 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
 
   return (
     <>
-      {/* ── Main Row ── */}
       <tr onClick={onToggle} style={{ cursor: 'pointer' }}>
-        {/* Status */}
         <td>
           <span
             className={`badge ${t.active ? 'b-green' : 'b-gray'}`}
@@ -410,7 +382,6 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
           </span>
         </td>
 
-        {/* Tunnel ID */}
         <td>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {isOpen ? <ChevronDown size={11} color="var(--a2)" /> : <ChevronRight size={11} color="var(--t3)" />}
@@ -420,7 +391,6 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
           </div>
         </td>
 
-        {/* Public URL */}
         <td>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{
@@ -433,21 +403,18 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
           </div>
         </td>
 
-        {/* Events */}
         <td style={{ textAlign: 'center' }}>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 600, color: t.forwarded > 0 ? 'var(--a2)' : 'var(--t3)' }}>
             {t.forwarded || 0}
           </span>
         </td>
 
-        {/* Created */}
         <td>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--t3)' }}>
             {fmtTime(t.createdAt)}
           </span>
         </td>
 
-        {/* Actions */}
         <td>
           <button
             className="btn-icon btn-sm"
@@ -461,13 +428,11 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
         </td>
       </tr>
 
-      {/* ── Expanded Detail ── */}
       {isOpen && (
         <tr>
           <td colSpan={6} style={{ padding: 0, background: 'rgba(91,108,248,.02)' }}>
             <div style={{ padding: '18px 22px' }}>
 
-              {/* Next-step banner when tunnel is idle (not yet connected via CLI) */}
               {!t.active && (
                 <div style={{
                   display: 'flex', alignItems: 'flex-start', gap: 12,
@@ -493,7 +458,6 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
                 </div>
               )}
 
-              {/* Connected success banner */}
               {t.active && (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 10,
@@ -508,7 +472,6 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
                 </div>
               )}
 
-              {/* URL Fields */}
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16,
               }}>
@@ -527,7 +490,6 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
                 </div>
               </div>
 
-              {/* CLI Command */}
               <div className="label" style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                 <Terminal size={9} color="var(--t3)" /> CLI Command
               </div>
@@ -566,9 +528,6 @@ function TunnelRow({ tunnel: t, isOpen, cliToken, cliCmd, accessToken, onToggle,
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   SUB-COMPONENTS
-   ══════════════════════════════════════════════════════════════════════════════ */
 function FieldCard({ label, value, icon: Icon, accent, onCopy, copied }: {
   label: string; value: string; icon: any; accent: string; onCopy: () => void; copied: boolean;
 }) {

@@ -130,7 +130,6 @@ function SendModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Bulk Action Bar ──────────────────────────────────────────────────────────
 function BulkBar({
   count, onReplay, onClearSelect, replayLoading,
 }: {
@@ -182,7 +181,6 @@ export default function EventsPage() {
   const [showAiDebug, setShowAiDebug] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
-  // Bulk select state
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
@@ -367,7 +365,6 @@ export default function EventsPage() {
         )}
       </div>
 
-      {/* Bulk action bar */}
       {selected.size > 0 && (
         <BulkBar
           count={selected.size}

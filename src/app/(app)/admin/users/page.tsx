@@ -60,7 +60,6 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Stats */}
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
           {[
@@ -77,7 +76,6 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Search + refresh */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 9, padding: '7px 12px', flex: 1, maxWidth: 360 }}>
           <Search size={13} color="var(--text3)" />
@@ -147,7 +145,6 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
 
-            {/* Pagination */}
             <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)' }}>
               <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)' }}>{total} total users</span>
               <div style={{ display: 'flex', gap: 6 }}>

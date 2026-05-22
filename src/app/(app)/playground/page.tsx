@@ -76,7 +76,6 @@ export default function PlaygroundPage() {
 
       {!validateMode ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          {/* Left: Request */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ ...S.card, padding: 20 }}>
               <label style={S.label}>Target URL</label>
@@ -108,7 +107,6 @@ export default function PlaygroundPage() {
             </button>
           </div>
 
-          {/* Right: Response */}
           <div style={{ ...S.card, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
               {(['response', 'curl'] as const).map(t => <button key={t} onClick={() => setTab(t)} style={S.tab(tab === t)}>{t === 'curl' ? 'cURL' : 'Response'}</button>)}

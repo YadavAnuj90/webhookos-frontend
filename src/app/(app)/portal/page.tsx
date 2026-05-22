@@ -10,7 +10,6 @@ import {
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 
-// ─── Live Preview ────────────────────────────────────────────────────────────
 function BrandingPreview({ b }: { b: Partial<PortalBranding> }) {
   const dark    = b.darkMode ?? false;
   const bg      = dark ? '#0f1117' : '#f8fafc';
@@ -23,7 +22,6 @@ function BrandingPreview({ b }: { b: Partial<PortalBranding> }) {
 
   return (
     <div style={{ background: bg, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', fontFamily: `${font}, system-ui, sans-serif`, fontSize: 11 }}>
-      {/* Header */}
       <div style={{ padding: '10px 14px', background: primary, display: 'flex', alignItems: 'center', gap: 8 }}>
         {b.logoUrl
           ? <img src={b.logoUrl} style={{ height: 20, objectFit: 'contain' }} alt="" onError={e => (e.currentTarget.style.display = 'none')} />
@@ -31,12 +29,10 @@ function BrandingPreview({ b }: { b: Partial<PortalBranding> }) {
         <span style={{ color: '#fff', fontWeight: 700, fontSize: 12 }}>{b.companyName || 'Your Company'}</span>
         {dark ? <Moon size={10} color="rgba(255,255,255,.5)" style={{ marginLeft: 'auto' }} /> : <Sun size={10} color="rgba(255,255,255,.5)" style={{ marginLeft: 'auto' }} />}
       </div>
-      {/* Title */}
       <div style={{ padding: '8px 14px', borderBottom: `1px solid ${border}`, background: bg2 }}>
         <div style={{ color: txt, fontWeight: 700, fontSize: 11 }}>{b.portalTitle || 'Webhook Status Portal'}</div>
         <div style={{ color: txt3, fontSize: 9, marginTop: 1 }}>Real-time delivery status</div>
       </div>
-      {/* Rows */}
       {[
         { event: 'payment.success', status: 'delivered', ms: '42ms' },
         { event: 'order.created',   status: 'delivered', ms: '67ms' },
@@ -50,7 +46,6 @@ function BrandingPreview({ b }: { b: Partial<PortalBranding> }) {
           </div>
         </div>
       ))}
-      {/* Footer */}
       <div style={{ padding: '7px 14px', textAlign: 'center', background: bg2, borderTop: `1px solid ${border}` }}>
         <span style={{ color: txt3, fontSize: 9 }}>Powered by WebhookOS</span>
         {b.supportEmail && <span style={{ color: txt3, fontSize: 9 }}> · {b.supportEmail}</span>}
@@ -59,7 +54,6 @@ function BrandingPreview({ b }: { b: Partial<PortalBranding> }) {
   );
 }
 
-// ─── Branding Modal ──────────────────────────────────────────────────────────
 function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [b, setB] = useState<Partial<PortalBranding>>({
@@ -91,7 +85,6 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
   return (
     <div className="modal-bg" onClick={onClose}>
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 16, width: 860, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,.5)', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#0f766e,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Palette size={15} color="#fff" /></div>
@@ -100,11 +93,8 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
           <button className="btn-icon" onClick={onClose}><X size={14} /></button>
         </div>
 
-        {/* Body: 2-col */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 0, flex: 1, overflow: 'hidden' }}>
-          {/* Left: form */}
           <div style={{ padding: '20px 24px', overflowY: 'auto', borderRight: '1px solid var(--border)' }}>
-            {/* Brand Identity */}
             <div style={S.section}>Brand Identity</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={S.field}><label style={S.label}>Company Name</label><input style={S.input} placeholder="Acme Corp" value={b.companyName || ''} onChange={e => set('companyName', e.target.value)} /></div>
@@ -115,7 +105,6 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
               <div style={S.field}><label style={S.label}>Favicon URL</label><input style={S.input} type="url" placeholder="https://cdn.example.com/favicon.ico" value={b.faviconUrl || ''} onChange={e => set('faviconUrl', e.target.value)} /></div>
             </div>
 
-            {/* Colors & Typography */}
             <div style={S.section}>Colors &amp; Typography</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
               <div style={S.field}>
@@ -149,7 +138,6 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
               </div>
             </div>
 
-            {/* Custom Domain */}
             <div style={S.section}>Custom Domain</div>
             <div style={S.field}>
               <label style={S.label}>Custom Domain</label>
@@ -171,7 +159,6 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
               </div>
             )}
 
-            {/* Support */}
             <div style={S.section}>Support &amp; Social</div>
             <div style={S.field}><label style={S.label}>Support Email</label><input style={S.input} type="email" placeholder="support@yourcompany.com" value={b.supportEmail || ''} onChange={e => set('supportEmail', e.target.value)} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 12 }}>
@@ -180,7 +167,6 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
               <div style={S.field}><label style={S.label}>Website</label><input style={S.input} type="url" placeholder="https://…" value={b.socialLinks?.['website'] || ''} onChange={e => setSocial('website', e.target.value)} /></div>
             </div>
 
-            {/* Custom CSS */}
             <div style={S.section}>Custom CSS</div>
             <div style={S.field}>
               <label style={S.label}>Custom CSS <span style={{ fontWeight: 400, color: 'var(--text3)' }}>(injected into portal head)</span></label>
@@ -192,7 +178,6 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
             </div>
           </div>
 
-          {/* Right: live preview */}
           <div style={{ padding: '20px 18px', background: 'var(--bg)', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
             <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: 'var(--text2)', marginBottom: 2 }}>Live Preview</div>
             <BrandingPreview b={b} />
@@ -202,7 +187,6 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '14px 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           <button onClick={onClose} style={{ padding: '9px 20px', borderRadius: 8, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text2)', fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
           <button onClick={save} disabled={saving} style={{ padding: '9px 24px', borderRadius: 8, background: 'linear-gradient(135deg,#0f766e,#059669)', border: 'none', color: '#fff', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
@@ -214,7 +198,6 @@ function BrandingModal({ tokenId, onClose }: { tokenId: string; onClose: () => v
   );
 }
 
-// ─── Subscriptions Modal ─────────────────────────────────────────────────────
 function SubscriptionsModal({ token, onClose }: { token: any; onClose: () => void }) {
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<string[]>(token.subscribedEventTypes || []);
@@ -287,7 +270,6 @@ function SubscriptionsModal({ token, onClose }: { token: any; onClose: () => voi
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function PortalPage() {
   const [tokens, setTokens]           = useState<any[]>([]);
   const [showCreate, setShowCreate]   = useState(false);
@@ -297,7 +279,6 @@ export default function PortalPage() {
   const [loading, setLoading]         = useState(false);
   const [fetching, setFetching]       = useState(true);
   const [form, setForm]               = useState({ projectId: '', customerName: '', customerEmail: '', expiresAt: '', brandColor: '#6366f1', logoUrl: '' });
-  // newToken: holds the one-time token string returned on creation (pt_xxxx)
   const [newToken, setNewToken]       = useState<{ token: string; customerName: string } | null>(null);
 
   const load = async () => { try { const d = await portalApi.listTokens(); setTokens(Array.isArray(d) ? d : []); } catch { toast.error('Could not load portal tokens'); } finally { setFetching(false); } };
@@ -310,7 +291,6 @@ export default function PortalPage() {
       setShowCreate(false);
       setForm({ projectId: '', customerName: '', customerEmail: '', expiresAt: '', brandColor: '#6366f1', logoUrl: '' });
       await load();
-      // Show the one-time token reveal if backend returned a token value
       if (created?.token) setNewToken({ token: created.token, customerName: created.customerName || form.customerName });
     }
     catch (e: any) { toast.error(e?.response?.data?.message || 'Could not create portal token'); }
@@ -332,7 +312,6 @@ export default function PortalPage() {
 
   return (
     <div>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#0f766e,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ExternalLink size={18} color="#fff" /></div>
@@ -346,7 +325,6 @@ export default function PortalPage() {
         </button>
       </div>
 
-      {/* How it works */}
       <div style={{ ...S.card, padding: '18px 22px', marginBottom: 24, background: 'rgba(99,102,241,0.05)', borderColor: 'rgba(99,102,241,0.2)' }}>
         <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'var(--accent2)', marginBottom: 8 }}>How it works</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
@@ -365,7 +343,6 @@ export default function PortalPage() {
         </div>
       </div>
 
-      {/* Token list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {fetching ? (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:12 }}>
@@ -406,14 +383,12 @@ export default function PortalPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                {/* Subscriptions button */}
                 <button
                   onClick={() => setSubsToken(t)}
                   style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(34,197,94,.3)', background: 'rgba(34,197,94,.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-body)', fontSize: 11, color: '#4ade80' }}
                 >
                   <Tag size={11} />{t.subscribedEventTypes?.length > 0 ? `${t.subscribedEventTypes.length} events` : 'All events'}
                 </button>
-                {/* Branding button */}
                 <button
                   onClick={() => setBrandingToken(t._id)}
                   style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid rgba(99,102,241,.3)', background: 'rgba(99,102,241,.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent2)' }}
@@ -433,7 +408,6 @@ export default function PortalPage() {
         ))}
       </div>
 
-      {/* Create modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ ...S.card, width: 480, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
@@ -459,7 +433,6 @@ export default function PortalPage() {
         </div>
       )}
 
-      {/* One-time token reveal modal — shown once after creation */}
       {newToken && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ ...S.card, width: 500, padding: 28, boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
@@ -485,12 +458,10 @@ export default function PortalPage() {
         </div>
       )}
 
-      {/* Branding modal */}
       {brandingToken && (
         <BrandingModal tokenId={brandingToken} onClose={() => setBrandingToken(null)} />
       )}
 
-      {/* Subscriptions modal */}
       {subsToken && (
         <SubscriptionsModal token={subsToken} onClose={() => { setSubsToken(null); load(); }} />
       )}

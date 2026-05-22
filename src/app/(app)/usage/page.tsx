@@ -59,7 +59,6 @@ export default function UsagePage() {
         </div>
       </div>
 
-      {/* Overage banner */}
       {(data?.overage?.events > 0) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 18px', background: 'rgba(248,113,113,.08)', border: '1px solid rgba(248,113,113,.25)', borderRadius: 11, marginBottom: 20 }}>
           <AlertTriangle size={16} color="#f87171" style={{ flexShrink: 0 }} />
@@ -77,7 +76,6 @@ export default function UsagePage() {
         </div>
       )}
 
-      {/* Bandwidth row */}
       {(data?.bandwidth?.bytes > 0) && (
         <div style={{ display: 'flex', gap: 14, marginBottom: 18 }}>
           {[
@@ -92,7 +90,6 @@ export default function UsagePage() {
         </div>
       )}
 
-      {/* Summary stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         {loading ? (
           <>{[0,1,2,3].map(i => <SkeletonCard key={i} />)}</>
@@ -113,7 +110,6 @@ export default function UsagePage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
-        {/* Chart */}
         <div style={{ ...S.card, padding: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <h3 style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Delivery Volume</h3>
@@ -146,7 +142,6 @@ export default function UsagePage() {
           )}
         </div>
 
-        {/* Plan limits */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ ...S.card, padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>

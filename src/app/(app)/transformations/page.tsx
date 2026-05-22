@@ -74,7 +74,6 @@ export default function TransformationsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
-        {/* Transformations list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {fetching ? (
             <><SkeletonCard /><SkeletonCard /><SkeletonCard /></>
@@ -106,7 +105,6 @@ export default function TransformationsPage() {
           ))}
         </div>
 
-        {/* Preview panel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ ...S.card, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -128,7 +126,6 @@ export default function TransformationsPage() {
               )}
             </div>
           </div>
-          {/* Type legend */}
           <div style={{ ...S.card, padding: 14 }}>
             <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, color: 'var(--text3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Transformation Types</div>
             {Object.entries(TYPE_LABELS).map(([k, v]) => (
@@ -141,7 +138,6 @@ export default function TransformationsPage() {
         </div>
       </div>
 
-      {/* Create modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ ...S.card, width: 520, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>

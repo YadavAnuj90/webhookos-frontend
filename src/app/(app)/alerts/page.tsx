@@ -63,7 +63,6 @@ export default function AlertsPage() {
         </button>
       </div>
 
-      {/* Channel quick guide */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 24 }}>
         {[
           { icon: Mail, label: 'Email', desc: 'Send alerts to any email address', color: '#0ea5e9' },
@@ -80,7 +79,6 @@ export default function AlertsPage() {
         ))}
       </div>
 
-      {/* Rules list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {fetching ? (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:12 }}>
@@ -126,7 +124,6 @@ export default function AlertsPage() {
         })}
       </div>
 
-      {/* Create/Edit modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ ...S.card, width: 500, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>

@@ -13,9 +13,6 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import Empty from '@/components/ui/Empty';
 import { formatDistanceToNow } from 'date-fns';
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   ACTION CONFIG — maps each action to an icon, color, label
-   ══════════════════════════════════════════════════════════════════════════════ */
 type ActionDef = { icon: any; color: string; bg: string; bd: string; label: string };
 const ACTIONS: Record<string, ActionDef> = {
   login:             { icon: LogIn,      color: 'var(--blue)',   bg: 'var(--bbg)', bd: 'var(--bbd)', label: 'Login' },
@@ -39,7 +36,6 @@ const ACTIONS: Record<string, ActionDef> = {
   '2fa_disabled':    { icon: Smartphone, color: 'var(--red)',    bg: 'var(--rbg)', bd: 'var(--rbd)', label: '2FA Disabled' },
   billing_upgraded:  { icon: CreditCard, color: 'var(--green)',  bg: 'var(--gbg)', bd: 'var(--gbd)', label: 'Plan Upgraded' },
   billing_downgraded:{ icon: CreditCard, color: 'var(--yellow)', bg: 'var(--ybg)', bd: 'var(--ybd)', label: 'Plan Downgraded' },
-  // generic fallbacks
   create:  { icon: Plus,       color: 'var(--green)',  bg: 'var(--gbg)', bd: 'var(--gbd)', label: 'Create' },
   update:  { icon: Edit3,      color: 'var(--yellow)', bg: 'var(--ybg)', bd: 'var(--ybd)', label: 'Update' },
   delete:  { icon: Trash2,     color: 'var(--red)',    bg: 'var(--rbg)', bd: 'var(--rbd)', label: 'Delete' },
@@ -55,14 +51,10 @@ const getAction = (a: string): ActionDef => {
   return { ...DEFAULT_ACTION, label: fmtAction(a) };
 };
 
-/** Capitalize & humanize raw action string: "api_key_created" → "Api Key Created" */
 function fmtAction(a: string): string {
   return a.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   HELPERS
-   ══════════════════════════════════════════════════════════════════════════════ */
 function fmtDate(iso: string) {
   try {
     const d = new Date(iso);
@@ -76,9 +68,6 @@ function fmtDate(iso: string) {
   }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   MAIN PAGE
-   ══════════════════════════════════════════════════════════════════════════════ */
 export default function HistoryPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -87,7 +76,6 @@ export default function HistoryPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const limit = 25;
 
-  /* ── API call ── */
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['audit-history', page, actionFilter],
     queryFn: () => auditApi.myHistory({ page, limit, action: actionFilter || undefined }),
@@ -101,7 +89,6 @@ export default function HistoryPage() {
   const total = data?.total || 0;
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  /* ── Client-side search + outcome filter ── */
   const filtered = useMemo(() => {
     let list = logs;
     if (search.trim()) {
@@ -121,7 +108,6 @@ export default function HistoryPage() {
     return list;
   }, [logs, search, outcomeFilter]);
 
-  /* ── Stats from current page data ── */
   const stats = useMemo(() => {
     const success = logs.filter((l: any) => l.outcome !== 'failure').length;
     const failure = logs.filter((l: any) => l.outcome === 'failure').length;
@@ -129,7 +115,6 @@ export default function HistoryPage() {
     return { total, success, failure, uniqueActions };
   }, [logs, total]);
 
-  /* ── Group by date for timeline sections ── */
   const grouped = useMemo(() => {
     const map: Record<string, any[]> = {};
     filtered.forEach((log: any) => {
@@ -139,7 +124,6 @@ export default function HistoryPage() {
     return Object.entries(map);
   }, [filtered]);
 
-  /* ── Unique actions for filter dropdown ── */
   const actionOptions = useMemo(() => {
     const set = new Set(logs.map((l: any) => l.action).filter(Boolean));
     return Array.from(set).sort();
@@ -147,7 +131,6 @@ export default function HistoryPage() {
 
   return (
     <div className="page">
-      {/* ═══ Page Header ═══ */}
       <div className="ph">
         <div className="ph-left" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
@@ -175,7 +158,6 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* ═══ Stat Cards ═══ */}
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <StatCard icon={Activity} color="var(--a2)" label="Total Events" value={stats.total} />
         <StatCard icon={Check} color="var(--green)" label="Successful" value={stats.success} trend={stats.total > 0 ? `${Math.round((stats.success / Math.max(1, stats.success + stats.failure)) * 100)}%` : undefined} />
@@ -183,12 +165,10 @@ export default function HistoryPage() {
         <StatCard icon={Zap} color="var(--yellow)" label="Action Types" value={stats.uniqueActions} trend="this page" />
       </div>
 
-      {/* ═══ Toolbar — Search + Filters ═══ */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18,
         flexWrap: 'wrap',
       }}>
-        {/* Search */}
         <div className="search-box" style={{ flex: '1 1 220px', maxWidth: 320 }}>
           <Search size={13} />
           <input
@@ -200,7 +180,6 @@ export default function HistoryPage() {
           />
         </div>
 
-        {/* Action filter */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Filter size={11} color="var(--t3)" />
           <select
@@ -216,7 +195,6 @@ export default function HistoryPage() {
           </select>
         </div>
 
-        {/* Outcome filter */}
         <select
           className="input"
           value={outcomeFilter}
@@ -228,13 +206,11 @@ export default function HistoryPage() {
           <option value="failure">Failure</option>
         </select>
 
-        {/* Count indicator */}
         <div style={{ marginLeft: 'auto', fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', letterSpacing: '.08em' }}>
           {filtered.length} OF {total} EVENTS
         </div>
       </div>
 
-      {/* ═══ Timeline Table ═══ */}
       <div className="tbl-wrap">
         {isLoading ? (
           <table className="tbl">
@@ -262,7 +238,6 @@ export default function HistoryPage() {
             <tbody>
               {grouped.map(([day, dayLogs]) => (
                 <Fragment key={day}>
-                  {/* ── Date separator row ── */}
                   <tr>
                     <td colSpan={6} style={{
                       padding: '10px 14px 6px',
@@ -286,7 +261,6 @@ export default function HistoryPage() {
                     </td>
                   </tr>
 
-                  {/* ── Log rows ── */}
                   {dayLogs.map((log: any, i: number) => {
                     const def = getAction(log.action);
                     const Icon = def.icon;
@@ -300,7 +274,6 @@ export default function HistoryPage() {
                           onClick={() => setExpandedId(isExpanded ? null : (log._id || `${day}-${i}`))}
                           style={{ cursor: 'pointer' }}
                         >
-                          {/* Time */}
                           <td>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                               <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--t2)', fontWeight: 500 }}>
@@ -312,7 +285,6 @@ export default function HistoryPage() {
                             </div>
                           </td>
 
-                          {/* Action */}
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <div style={{
@@ -331,7 +303,6 @@ export default function HistoryPage() {
                             </div>
                           </td>
 
-                          {/* Resource */}
                           <td>
                             {log.resourceType ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -356,7 +327,6 @@ export default function HistoryPage() {
                             )}
                           </td>
 
-                          {/* Details */}
                           <td style={{ maxWidth: 260 }}>
                             <span style={{
                               fontSize: 12, color: 'var(--t2)', lineHeight: 1.45,
@@ -369,7 +339,6 @@ export default function HistoryPage() {
                             </span>
                           </td>
 
-                          {/* Outcome */}
                           <td style={{ textAlign: 'center' }}>
                             {isFail ? (
                               <span className="badge b-red" style={{ fontSize: 9 }}>
@@ -382,7 +351,6 @@ export default function HistoryPage() {
                             )}
                           </td>
 
-                          {/* IP */}
                           <td>
                             <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--t3)' }}>
                               {log.ipAddress || '—'}
@@ -390,7 +358,6 @@ export default function HistoryPage() {
                           </td>
                         </tr>
 
-                        {/* ── Expanded Detail Row ── */}
                         {isExpanded && (
                           <tr>
                             <td colSpan={6} style={{ padding: 0, background: 'rgba(91,108,248,.02)' }}>
@@ -442,7 +409,6 @@ export default function HistoryPage() {
           </table>
         )}
 
-        {/* ═══ Pagination ═══ */}
         {!isLoading && filtered.length > 0 && (
           <div className="pg" style={{ justifyContent: 'space-between' }}>
             <span className="pg-info">
@@ -484,10 +450,6 @@ export default function HistoryPage() {
     </div>
   );
 }
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   SUB-COMPONENTS
-   ══════════════════════════════════════════════════════════════════════════════ */
 
 function StatCard({ icon: Icon, color, label, value, trend }: {
   icon: any; color: string; label: string; value: number | string; trend?: string;
@@ -531,11 +493,9 @@ function DetailField({ label, value, mono, isError }: {
   );
 }
 
-/* ── Helpers ── */
 function formatMetadata(meta: Record<string, any>): string {
   const keys = Object.keys(meta);
   if (keys.length === 0) return '—';
-  // Show first 2-3 key=value pairs
   return keys.slice(0, 3).map(k => {
     const v = meta[k];
     const vs = typeof v === 'string' ? v : JSON.stringify(v);

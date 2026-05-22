@@ -16,7 +16,6 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { SkeletonCard, SkeletonTable } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({
   label, value, sub, color, icon: Icon, trend,
 }: {
@@ -44,7 +43,6 @@ function StatCard({
   );
 }
 
-// ─── Health Score Ring ─────────────────────────────────────────────────────────
 function HealthRing({ score }: { score: number }) {
   const r = 44;
   const circ = 2 * Math.PI * r;
@@ -69,7 +67,6 @@ function HealthRing({ score }: { score: number }) {
   );
 }
 
-// ─── Retry History Bar ────────────────────────────────────────────────────────
 function RetryBar({ count, maxRetries }: { count: number; maxRetries: number }) {
   const filled = Math.min(count, maxRetries);
   return (
@@ -86,21 +83,18 @@ export default function EndpointHealthPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
-  // Fetch endpoint detail
   const { data: ep, isLoading: epLoading } = useQuery({
     queryKey: ['ep-detail', id],
     queryFn: () => endpointsApi.get(PID, id),
     refetchInterval: 30000,
   });
 
-  // Fetch last 50 events for this endpoint
   const { data: eventsData, isLoading: evtLoading } = useQuery({
     queryKey: ['ep-health-events', id],
     queryFn: () => eventsApi.list(PID, { limit: 50, endpointId: id }),
     refetchInterval: 30000,
   });
 
-  // Fetch analytics for this endpoint (7 days time series)
   const { data: ts, isLoading: tsLoading } = useQuery({
     queryKey: ['ep-ts', id],
     queryFn: () => analyticsApi.timeSeries(PID, { granularity: 'day', endpointId: id }),
@@ -109,7 +103,6 @@ export default function EndpointHealthPage() {
 
   const events: any[] = eventsData?.events || [];
 
-  // Compute health metrics from events
   const delivered = events.filter(e => e.status === 'delivered').length;
   const failed    = events.filter(e => e.status === 'failed').length;
   const dead      = events.filter(e => e.status === 'dead').length;
@@ -117,23 +110,19 @@ export default function EndpointHealthPage() {
   const successRate = total > 0 ? Math.round((delivered / total) * 100) : 100;
   const avgRetries  = total > 0 ? (events.reduce((s, e) => s + (e.retryCount || 0), 0) / total).toFixed(1) : '0';
 
-  // Avg latency from attempts
   const latencies = events.flatMap((e: any) => e.attempts?.map((a: any) => a.duration).filter(Boolean) || []);
   const avgLatency = latencies.length > 0
     ? Math.round(latencies.reduce((s: number, l: number) => s + l, 0) / latencies.length)
     : null;
 
-  // Health score (weighted)
   const healthScore = Math.max(0, Math.round(successRate - (dead / Math.max(total, 1)) * 20 - (Number(avgRetries) > 2 ? 10 : 0)));
 
-  // Chart data from time series
   const chart = (ts || []).map((b: any) => ({
     t: b._id?.date ? new Date(b._id.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
     delivered: b.delivered || 0,
     failed: b.failed || 0,
   }));
 
-  // Retry distribution chart
   const retryDist = [0, 1, 2, 3, 4, 5].map(r => ({
     retries: r === 5 ? '5+' : String(r),
     count: events.filter(e => (r === 5 ? e.retryCount >= 5 : e.retryCount === r)).length,
@@ -151,7 +140,6 @@ export default function EndpointHealthPage() {
 
   return (
     <div className="page">
-      {/* Header */}
       <div className="ph" style={{ marginBottom: 24 }}>
         <div className="ph-left">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -177,16 +165,13 @@ export default function EndpointHealthPage() {
         </div>
       </div>
 
-      {/* Top row: Health ring + Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 16, marginBottom: 20 }}>
-        {/* Health Score */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>Health Score</div>
           <HealthRing score={healthScore} />
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginTop: 4 }}>Based on last {total} events</div>
         </div>
 
-        {/* Stat grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
           <StatCard label="Success Rate" value={`${successRate}%`} color={successRate >= 95 ? 'var(--green)' : successRate >= 80 ? '#facc15' : 'var(--red)'} icon={TrendingUp} sub="Last 50 events" />
           <StatCard label="Delivered" value={delivered} color="var(--green)" icon={CheckCircle2} sub={`of ${total} total`} />
@@ -195,7 +180,6 @@ export default function EndpointHealthPage() {
         </div>
       </div>
 
-      {/* Endpoint meta */}
       <div className="card mb-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
         {[
           { label: 'URL', val: ep?.url || ep?.storageConfig?.bucket || '—' },
@@ -210,9 +194,7 @@ export default function EndpointHealthPage() {
         ))}
       </div>
 
-      {/* Charts row */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 20 }}>
-        {/* Delivery trend */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Delivery Trend — 7 Days</div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginBottom: 14 }}>delivered vs failed per day</div>
@@ -242,7 +224,6 @@ export default function EndpointHealthPage() {
           )}
         </div>
 
-        {/* Retry distribution */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Retry Distribution</div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginBottom: 14 }}>events by retry count</div>
@@ -266,7 +247,6 @@ export default function EndpointHealthPage() {
         </div>
       </div>
 
-      {/* Last 50 Deliveries Table */}
       <div className="tbl-wrap">
         <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>

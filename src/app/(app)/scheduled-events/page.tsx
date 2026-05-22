@@ -149,7 +149,6 @@ export default function ScheduledEventsPage() {
         </div>
       </div>
 
-      {/* Filters */}
       <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:16 }}>
         <select className="input" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ width:160,fontSize:12 }}>
           <option value="">All Statuses</option>
@@ -160,7 +159,6 @@ export default function ScheduledEventsPage() {
         <button className="btn btn-ghost btn-sm" onClick={() => qc.invalidateQueries({ queryKey: ['scheduled-events'] })}><RefreshCw size={11}/>Refresh</button>
       </div>
 
-      {/* Table */}
       {isLoading ? <div className="tbl-wrap"><table className="tbl"><thead><tr>{['Event Type','Endpoint','Scheduled For','Priority','Status',''].map(h=><th key={h}>{h}</th>)}</tr></thead><SkeletonTable rows={6} cols={6}/></table></div> : events.length === 0 ? (
         <Empty title="No scheduled events" sub="Schedule your first webhook for future delivery." action={<button className="btn btn-primary btn-sm" onClick={()=>setShowModal(true)}><Plus size={11}/>Schedule Event</button>}/>
       ) : (
@@ -204,7 +202,6 @@ export default function ScheduledEventsPage() {
         </div>
       )}
 
-      {/* Pagination */}
       {total > 20 && (
         <div style={{ display:'flex',justifyContent:'center',gap:8,marginTop:16 }}>
           <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button>
@@ -213,7 +210,6 @@ export default function ScheduledEventsPage() {
         </div>
       )}
 
-      {/* Detail Drawer */}
       {selected && (
         <div style={{ position:'fixed',inset:0,zIndex:9998,display:'flex',justifyContent:'flex-end' }}>
           <div style={{ position:'absolute',inset:0,background:'rgba(0,0,0,.4)' }} onClick={() => setSelected(null)}/>

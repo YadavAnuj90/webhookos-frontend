@@ -10,8 +10,6 @@ import {
 } from 'lucide-react';
 import { careersApi } from '@/lib/api';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
 const DEPT_OPTIONS = [
   { value: 'engineering', label: 'Engineering' },
   { value: 'product',     label: 'Product' },
@@ -41,7 +39,6 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }
   open:        { bg: 'var(--gbg)', text: 'var(--green)',  border: 'var(--gbd)' },
   closed:      { bg: 'var(--rbg)', text: 'var(--red)',    border: 'var(--rbd)' },
   on_hold:     { bg: 'var(--obg)', text: 'var(--orange)', border: 'var(--obd)' },
-  // Application statuses
   new:         { bg: 'var(--bbg)', text: 'var(--blue)',   border: 'var(--bbd)' },
   reviewed:    { bg: 'var(--ybg)', text: 'var(--yellow)', border: 'var(--ybd)' },
   shortlisted: { bg: 'var(--abg)', text: 'var(--a)',      border: 'var(--abd)' },
@@ -62,8 +59,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
-
 export default function AdminCareersPage() {
   const [tab, setTab] = useState<'jobs' | 'applications'>('jobs');
   const [showJobForm, setShowJobForm] = useState(false);
@@ -72,7 +67,6 @@ export default function AdminCareersPage() {
   const [appFilters, setAppFilters] = useState({ jobId: '', status: '', page: 1 });
   const qc = useQueryClient();
 
-  // ── Queries ──
   const { data: stats } = useQuery({ queryKey: ['careers-stats'], queryFn: careersApi.adminStats });
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({ queryKey: ['careers-jobs'], queryFn: () => careersApi.adminListJobs() });
   const { data: appsData, isLoading: appsLoading } = useQuery({
@@ -81,7 +75,6 @@ export default function AdminCareersPage() {
     enabled: tab === 'applications',
   });
 
-  // ── Mutations ──
   const createJob = useMutation({ mutationFn: careersApi.adminCreateJob, onSuccess: () => { qc.invalidateQueries({ queryKey: ['careers-jobs'] }); qc.invalidateQueries({ queryKey: ['careers-stats'] }); setShowJobForm(false); } });
   const updateJob = useMutation({ mutationFn: ({ id, data }: any) => careersApi.adminUpdateJob(id, data), onSuccess: () => { qc.invalidateQueries({ queryKey: ['careers-jobs'] }); setEditingJob(null); } });
   const publishJob = useMutation({ mutationFn: careersApi.adminPublishJob, onSuccess: () => { qc.invalidateQueries({ queryKey: ['careers-jobs'] }); qc.invalidateQueries({ queryKey: ['careers-stats'] }); } });
@@ -94,7 +87,6 @@ export default function AdminCareersPage() {
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1200, margin: '0 auto' }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--t1)', letterSpacing: '-1px', margin: 0 }}>Careers Management</h1>
@@ -105,7 +97,6 @@ export default function AdminCareersPage() {
         </button>
       </div>
 
-      {/* Stats */}
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
           {[
@@ -127,7 +118,6 @@ export default function AdminCareersPage() {
         </div>
       )}
 
-      {/* Tabs */}
       <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '1px solid var(--b1)' }}>
         {(['jobs', 'applications'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
@@ -139,7 +129,6 @@ export default function AdminCareersPage() {
         ))}
       </div>
 
-      {/* ── JOBS TAB ── */}
       {tab === 'jobs' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {jobsLoading ? (
@@ -187,10 +176,8 @@ export default function AdminCareersPage() {
         </div>
       )}
 
-      {/* ── APPLICATIONS TAB ── */}
       {tab === 'applications' && (
         <>
-          {/* Filters */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
             <select value={appFilters.jobId} onChange={e => setAppFilters(f => ({ ...f, jobId: e.target.value, page: 1 }))} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--b2)', background: 'var(--card)', color: 'var(--t1)', fontSize: 12, fontFamily: 'inherit' }}>
               <option value="">All Jobs</option>
@@ -202,7 +189,6 @@ export default function AdminCareersPage() {
             </select>
           </div>
 
-          {/* Table */}
           <div style={{ background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r3)', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
@@ -251,7 +237,6 @@ export default function AdminCareersPage() {
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 18 }}>
               <button disabled={appFilters.page <= 1} onClick={() => setAppFilters(f => ({ ...f, page: f.page - 1 }))} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--b2)', background: 'var(--card)', color: 'var(--t2)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -266,13 +251,11 @@ export default function AdminCareersPage() {
         </>
       )}
 
-      {/* ── JOB FORM MODAL ── */}
       {showJobForm && <JobFormModal job={editingJob} onClose={() => { setShowJobForm(false); setEditingJob(null); }} onSave={(data: any) => {
         if (editingJob) updateJob.mutate({ id: editingJob._id, data });
         else createJob.mutate(data);
       }} saving={createJob.isPending || updateJob.isPending} />}
 
-      {/* ── APPLICATION DETAIL MODAL ── */}
       {viewApp && <AppDetailModal app={viewApp} onClose={() => setViewApp(null)} onStatusChange={(status: string, notes: string) => {
         updateAppStatus.mutate({ id: viewApp._id, data: { status, adminNotes: notes } });
         setViewApp(null);
@@ -280,8 +263,6 @@ export default function AdminCareersPage() {
     </div>
   );
 }
-
-// ─── Job Form Modal ──────────────────────────────────────────────────────────
 
 function JobFormModal({ job, onClose, onSave, saving }: { job: any; onClose: () => void; onSave: (d: any) => void; saving: boolean }) {
   const [form, setForm] = useState({
@@ -336,8 +317,6 @@ function JobFormModal({ job, onClose, onSave, saving }: { job: any; onClose: () 
     </div>
   );
 }
-
-// ─── Application Detail Modal ────────────────────────────────────────────────
 
 function AppDetailModal({ app, onClose, onStatusChange }: { app: any; onClose: () => void; onStatusChange: (s: string, n: string) => void }) {
   const [status, setStatus] = useState(app.status);

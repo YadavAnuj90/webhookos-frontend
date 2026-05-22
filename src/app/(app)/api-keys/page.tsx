@@ -58,7 +58,6 @@ export default function ApiKeysPage() {
         </button>
       </div>
 
-      {/* Stats */}
       {stats && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
           {[
@@ -78,7 +77,6 @@ export default function ApiKeysPage() {
         </div>
       )}
 
-      {/* New key revealed */}
       {newKey && (
         <div style={{ marginBottom: 20, padding: 16, borderRadius: 12, background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.25)' }}>
           <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: '#4ade80', marginBottom: 8 }}>API Key created — copy it now, it won't be shown again</div>
@@ -92,7 +90,6 @@ export default function ApiKeysPage() {
         </div>
       )}
 
-      {/* Keys table */}
       <div style={S.card}>
         {fetching ? (
           <table className="tbl">
@@ -153,7 +150,6 @@ export default function ApiKeysPage() {
         )}
       </div>
 
-      {/* Create modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ ...S.card, width: 480, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>

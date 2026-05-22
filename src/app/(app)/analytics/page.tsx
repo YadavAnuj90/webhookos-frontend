@@ -17,9 +17,6 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 
 const COLORS = ['#5b6cf8', '#22c55e', '#eab308', '#f43f5e', '#38bdf8', '#f97316', '#a78bfa', '#14b8a6'];
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   CUSTOM TOOLTIP
-   ══════════════════════════════════════════════════════════════════════════════ */
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -43,9 +40,6 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   DELIVERY HEATMAP
-   ══════════════════════════════════════════════════════════════════════════════ */
 function DeliveryHeatmapChart() {
   const { projectId: PID } = useProjectStore();
   const { data, isLoading } = useQuery<DeliveryHeatmap>({
@@ -67,7 +61,6 @@ function DeliveryHeatmapChart() {
   const cellColor = (cell: HeatmapCell) => {
     if (cell.total === 0) return 'rgba(91,108,248,.04)';
     const ratio = cell.total / maxVal;
-    // Blend toward red if failures dominate
     const failRatio = cell.failed / Math.max(1, cell.total);
     if (failRatio > 0.5) {
       const alpha = 0.15 + ratio * 0.7;
@@ -80,7 +73,6 @@ function DeliveryHeatmapChart() {
   return (
     <div style={{ overflowX: 'auto' }}>
       <div style={{ minWidth: 620 }}>
-        {/* Hour labels */}
         <div style={{ display: 'grid', gridTemplateColumns: '44px repeat(24,1fr)', gap: 2, marginBottom: 3 }}>
           <div />
           {Array.from({ length: 24 }, (_, h) => (
@@ -93,7 +85,6 @@ function DeliveryHeatmapChart() {
           ))}
         </div>
 
-        {/* Rows */}
         {matrix.map((row: HeatmapCell[], di: number) => (
           <div key={di} style={{ display: 'grid', gridTemplateColumns: '44px repeat(24,1fr)', gap: 2, marginBottom: 2 }}>
             <div style={{
@@ -120,7 +111,6 @@ function DeliveryHeatmapChart() {
           </div>
         ))}
 
-        {/* Legend */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 8.5, color: 'var(--t3)' }}>Less</span>
           {[0.04, 0.2, 0.4, 0.65, 0.9].map((a, i) => (
@@ -136,9 +126,6 @@ function DeliveryHeatmapChart() {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   MAIN PAGE
-   ══════════════════════════════════════════════════════════════════════════════ */
 export default function AnalyticsPage() {
   const { projectId: PID } = useProjectStore();
   const [days, setDays] = useState(7);
@@ -158,11 +145,9 @@ export default function AnalyticsPage() {
     queryFn: () => analyticsApi.eventTypes(PID, { days }),
   });
 
-  /* ── Transform time-series for charts ── */
   const chart = useMemo(() => {
     if (!ts || !Array.isArray(ts)) return [];
     return ts.map((b: any) => {
-      // Handle both hour granularity (bucketHour field) and day granularity (_id.date)
       let label = '';
       if (b.bucketHour) {
         const d = new Date(b.bucketHour);
@@ -193,12 +178,10 @@ export default function AnalyticsPage() {
     return types.slice(0, 8).map((t: any) => ({ name: t.eventType, value: t.count }));
   }, [types]);
 
-  /* ── Summary stats ── */
   const s = summary || {};
 
   return (
     <div className="page">
-      {/* ═══ Header ═══ */}
       <div className="ph">
         <div className="ph-left" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
@@ -227,7 +210,6 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* ═══ Stat Cards — Row 1: Primary ═══ */}
       <div className="stat-grid">
         {sumLoading ? (
           <>{[0, 1, 2, 3].map(i => <SkeletonCard key={i} />)}</>
@@ -245,7 +227,6 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* ═══ Stat Cards — Row 2: Extended metrics ═══ */}
       {!sumLoading && (s.dead > 0 || s.filtered > 0 || s.rateLimited > 0 || s.total > 0) && (
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14,
@@ -258,7 +239,6 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* ═══ Delivery Volume — Area Chart ═══ */}
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
@@ -295,9 +275,7 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* ═══ Row: Latency + Success Rate ═══ */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-        {/* Latency Bar Chart */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--t1)', marginBottom: 2 }}>Avg Latency (ms)</div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', marginBottom: 16 }}>Response time per period</div>
@@ -314,7 +292,6 @@ export default function AnalyticsPage() {
           ) : <EmptyChart label="No latency data" />}
         </div>
 
-        {/* Event Types Pie */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--t1)', marginBottom: 2 }}>Event Types</div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', marginBottom: 12 }}>Distribution by type</div>
@@ -349,9 +326,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* ═══ Success Rate Line + Heatmap ═══ */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        {/* Success rate over time */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--t1)', marginBottom: 2 }}>Success Rate (%)</div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', marginBottom: 16 }}>Delivery success percentage over time</div>
@@ -374,7 +349,6 @@ export default function AnalyticsPage() {
           ) : <EmptyChart label="No data" />}
         </div>
 
-        {/* Delivery Heatmap */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--t1)', marginBottom: 2 }}>Delivery Heatmap</div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', marginBottom: 14 }}>Activity by day × hour (UTC)</div>
@@ -385,9 +359,6 @@ export default function AnalyticsPage() {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   SUB-COMPONENTS
-   ══════════════════════════════════════════════════════════════════════════════ */
 function StatCard({ label, value, color, icon: Icon, trend, isString }: {
   label: string; value: number | string; color: string; icon: any; trend?: string; isString?: boolean;
 }) {

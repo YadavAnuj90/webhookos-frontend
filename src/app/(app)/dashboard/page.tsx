@@ -12,7 +12,6 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import OnboardingBanner from '@/components/ui/OnboardingBanner';
 import { useState, useEffect } from 'react';
 
-// ─── Live Indicator ───────────────────────────────────────────────────────────
 function LiveIndicator({ lastUpdated }: { lastUpdated: Date | null }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -42,7 +41,6 @@ function LiveIndicator({ lastUpdated }: { lastUpdated: Date | null }) {
   );
 }
 
-// ─── Chart Skeleton ───────────────────────────────────────────────────────────
 function ChartSkeleton() {
   return (
     <div style={{ height: 160, display: 'flex', alignItems: 'flex-end', gap: 10, padding: '0 8px' }}>
@@ -55,7 +53,6 @@ function ChartSkeleton() {
   );
 }
 
-// ─── Onboarding Steps (shown when no data) ────────────────────────────────────
 function OnboardingSteps({ hasEndpoints, hasEvents }: { hasEndpoints: boolean; hasEvents: boolean }) {
   const steps = [
     { done: hasEndpoints, label: 'Create your first endpoint', href: '/endpoints', cta: 'Create Endpoint', desc: 'Configure a webhook delivery target — HTTP, S3, or GCS.' },
@@ -125,7 +122,6 @@ export default function DashboardPage() {
     refetchInterval: 30000,
   });
 
-  // Track last updated from most frequently refreshed query
   useEffect(() => {
     if (sumUpdated) setLastUpdated(new Date(sumUpdated));
   }, [sumUpdated]);
@@ -148,10 +144,8 @@ export default function DashboardPage() {
 
   return (
     <div className="page">
-      {/* Onboarding Banner (from store) */}
       <OnboardingBanner />
 
-      {/* Header */}
       <div className="ph">
         <div className="ph-left">
           <h1>Dashboard</h1>
@@ -165,10 +159,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Onboarding steps for new users */}
       {showOnboarding && <OnboardingSteps hasEndpoints={hasEndpoints} hasEvents={hasEvents} />}
 
-      {/* Stats */}
       <div className="stat-grid">
         {stats.map(({ label, val, color, icon: Icon, sub }) => (
           <div key={label} className="stat-card">
@@ -186,7 +178,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Chart */}
       <div className="card mb-6">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
@@ -236,9 +227,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Bottom rows */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        {/* Recent Events */}
         <div className="tbl-wrap">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--b1)' }}>
             <div style={{ fontWeight: 700, fontSize: 13 }}>Recent Events</div>
@@ -274,7 +263,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Endpoints */}
         <div className="tbl-wrap">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--b1)' }}>
             <div style={{ fontWeight: 700, fontSize: 13 }}>Endpoints</div>
@@ -308,7 +296,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Live Delivery Feed */}
       <div style={{ marginTop: 16 }}>
         <LiveFeed projectId={PID} maxHeight={260}/>
       </div>

@@ -43,7 +43,6 @@ export default function SettingsPage() {
   const [notifs, setNotifs] = useState({ emailOnFailure: true, emailOnRecovery: true, slackOnFailure: false, weeklyDigest: true, browserNotifications: false });
   const [dev, setDev] = useState({ logLevel: 'info', retentionDays: '30', signatureHeader: 'X-Webhook-Signature', maxPayloadKb: '256' });
 
-  // GDPR
   const [customerId, setCustomerId] = useState('');
   const [eraseConfirm, setEraseConfirm] = useState(false);
   const [eraseResult, setEraseResult] = useState<{ deletedEvents: number; deletedLogs: number } | null>(null);
@@ -60,7 +59,6 @@ export default function SettingsPage() {
     onError: (e: any) => toast.error(e.response?.data?.message || 'Erasure failed'),
   });
 
-  // Load PII endpoints for summary
   const loadPiiEndpoints = async () => {
     try {
       const r = await endpointsApi.list(PID, { limit: 100 });
@@ -81,7 +79,6 @@ export default function SettingsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 24 }}>
-        {/* Sidebar tabs */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {TABS.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setTab(id)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', borderRadius: 9, border: 'none', background: tab === id ? 'rgba(99,102,241,0.12)' : 'transparent', color: tab === id ? 'var(--accent2)' : 'var(--text3)', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: tab === id ? 600 : 400, cursor: 'pointer', textAlign: 'left', borderLeft: tab === id ? '2px solid var(--accent2)' : '2px solid transparent' }}>
@@ -90,7 +87,6 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        {/* Content */}
         <div>
           {tab === 'general' && (
             <div style={S.card}>
@@ -178,7 +174,6 @@ export default function SettingsPage() {
 
           {tab === 'compliance' && (
             <div>
-              {/* Payload Encryption */}
               <div style={{ ...S.card, marginBottom: 16 }}>
                 <h2 style={S.sectionTitle}>Payload Encryption at Rest</h2>
                 <p style={S.sectionDesc}>AES-256-GCM encryption for all stored webhook payloads</p>
@@ -194,7 +189,6 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              {/* GDPR Erasure */}
               <div style={{ ...S.card, marginBottom: 16 }}>
                 <h2 style={S.sectionTitle}>GDPR Right-to-Erasure</h2>
                 <p style={S.sectionDesc}>Permanently delete all events and delivery logs containing a specific customer ID</p>
@@ -224,7 +218,6 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              {/* AI PII Detector */}
               <div style={{ ...S.card, marginBottom: 16, background: 'rgba(168,85,247,.05)', border: '1px solid rgba(168,85,247,.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                   <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#6d28d9,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -243,7 +236,6 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              {/* PII Scrubbing Summary */}
               <div style={S.card}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div>
@@ -297,7 +289,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-    {/* GDPR erasure confirmation modal */}
     {eraseConfirm && (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ background: 'var(--bg2)', border: '1px solid rgba(248,113,113,.3)', borderRadius: 14, width: 460, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,.5)' }}>

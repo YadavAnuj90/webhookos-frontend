@@ -9,7 +9,6 @@ import toast from 'react-hot-toast';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import Empty from '@/components/ui/Empty';
 
-// ─── Event badge ────────────────────────────────────────────────────────────
 const EVENT_COLOR: Record<string, string> = {
   'endpoint.disabled':    '#f87171',
   'endpoint.recovered':   '#4ade80',
@@ -32,7 +31,6 @@ function EventBadge({ ev }: { ev: string }) {
   );
 }
 
-// ─── Secret Modal ────────────────────────────────────────────────────────────
 function SecretModal({ secret, onClose }: { secret: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const copy = () => { navigator.clipboard.writeText(secret); setCopied(true); setTimeout(() => setCopied(false), 2000); };
@@ -60,7 +58,6 @@ function SecretModal({ secret, onClose }: { secret: string; onClose: () => void 
   );
 }
 
-// ─── Create / Edit Modal ─────────────────────────────────────────────────────
 function OpWebhookModal({ editing, onClose }: { editing: OperationalWebhook | null; onClose: () => void }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
@@ -135,7 +132,6 @@ function OpWebhookModal({ editing, onClose }: { editing: OperationalWebhook | nu
             </div>
           )}
 
-          {/* Events */}
           <div className="field">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <label className="label" style={{ margin: 0 }}>Subscribed Events <span style={{ color: 'var(--red)' }}>*</span></label>
@@ -180,7 +176,6 @@ function OpWebhookModal({ editing, onClose }: { editing: OperationalWebhook | nu
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
 export default function OperationalWebhooksPage() {
   const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
@@ -225,7 +220,6 @@ export default function OperationalWebhooksPage() {
         </button>
       </div>
 
-      {/* Info callout */}
       <div style={{ background: 'rgba(99,102,241,.06)', border: '1px solid rgba(99,102,241,.18)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text2)', lineHeight: 1.6 }}>
         <strong style={{ color: 'var(--accent2)' }}>Operational webhooks</strong> fire when platform-level events happen (circuit breakers, DLQ threshold, billing) — not individual user deliveries. Use them to route alerts to Slack, PagerDuty, or your own monitoring.
       </div>

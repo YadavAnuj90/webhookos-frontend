@@ -104,7 +104,6 @@ export default function ResellerPage() {
   const [profileForm, setProfileForm] = useState<Partial<ResellerProfile>>({});
   const [profileLoaded, setProfileLoaded] = useState(false);
 
-  // Guard: only enterprise
   const { data: sub } = useQuery<Subscription>({
     queryKey: ['subscription'],
     queryFn: () => billingApi.getSubscription(),
@@ -172,7 +171,6 @@ export default function ResellerPage() {
     onError: (e: any) => toast.error(e.response?.data?.message || 'Failed'),
   });
 
-  // Enterprise guard
   if (sub && sub.features?.reseller === false) {
     return (
       <div className="page">
@@ -227,7 +225,6 @@ export default function ResellerPage() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="tabs" style={{ marginBottom: 24 }}>
           {TABS.map(({ id, label, icon: Icon }) => (
             <button key={id} className={`tab ${tab === id ? 'tab-active' : ''}`} onClick={() => setTab(id)}>
@@ -236,7 +233,6 @@ export default function ResellerPage() {
           ))}
         </div>
 
-        {/* Overview */}
         {tab === 'overview' && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }}>
@@ -287,7 +283,6 @@ export default function ResellerPage() {
           </>
         )}
 
-        {/* Customers */}
         {tab === 'customers' && (
           <div className="tbl-wrap">
             <table className="tbl">
@@ -331,7 +326,6 @@ export default function ResellerPage() {
           </div>
         )}
 
-        {/* Custom Plans */}
         {tab === 'plans' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
             {(!plans || plans.length === 0) && (
@@ -359,7 +353,6 @@ export default function ResellerPage() {
           </div>
         )}
 
-        {/* Profile */}
         {tab === 'profile' && (
           <div style={{ maxWidth: 580 }}>
             {[

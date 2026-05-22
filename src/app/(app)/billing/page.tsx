@@ -16,7 +16,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatDistanceToNow, format } from 'date-fns';
 
-/* ── Razorpay script loader ─────────────────────────────────────────────── */
 function useRazorpay() {
   useEffect(() => {
     if (typeof window === 'undefined' || (window as any).Razorpay) return;
@@ -27,7 +26,6 @@ function useRazorpay() {
   }, []);
 }
 
-/* ── Open Razorpay checkout ─────────────────────────────────────────────── */
 function openRazorpayCheckout(
   order: any,
   planLabel: string,
@@ -57,7 +55,6 @@ function openRazorpayCheckout(
   rzp.open();
 }
 
-/* ── Plan config ────────────────────────────────────────────────────────── */
 const PLAN_ORDER = ['trial', 'starter', 'pro', 'enterprise'];
 const PLAN_COLOR: Record<string, string> = {
   trial:      '#818cf8',
@@ -81,21 +78,16 @@ const PLAN_HIGHLIGHTS: Record<string, string[]> = {
   enterprise: ['Unlimited events', 'Unlimited endpoints', '365-day retention', 'SLA 99.99%', 'Dedicated support', 'Reseller portal'],
 };
 
-/** Convert paise to formatted INR string */
 function paise(amount: number): string {
   return (amount / 100).toLocaleString('en-IN');
 }
 
-/** Format plan feature values — handles -1 as "Unlimited" */
 function fmtLimit(val: number | undefined, suffix: string): string {
   if (val == null) return '';
   if (val === -1) return `Unlimited ${suffix}`;
   return `${val.toLocaleString()} ${suffix}`;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  UPGRADE CONFIRMATION MODAL                                               */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function UpgradeModal({
   open, planId, planName, priceMonthly, highlights, features, onConfirm, onClose, loading,
 }: {
@@ -120,7 +112,6 @@ function UpgradeModal({
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, width: '95%', padding: 0, overflow: 'hidden' }}>
-        {/* Top gradient banner */}
         <div style={{
           background: gradient, padding: '24px 28px 20px',
           display: 'flex', alignItems: 'center', gap: 14,
@@ -152,7 +143,6 @@ function UpgradeModal({
         </div>
 
         <div style={{ padding: '20px 28px 24px' }}>
-          {/* Features included */}
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10 }}>
               What you get
@@ -179,7 +169,6 @@ function UpgradeModal({
             </div>
           </div>
 
-          {/* Price breakdown */}
           <div style={{
             background: 'var(--card2)', border: '1px solid var(--b1)', borderRadius: 'var(--r2)',
             padding: '14px 16px', marginBottom: 20,
@@ -199,7 +188,6 @@ function UpgradeModal({
             </div>
           </div>
 
-          {/* Pay button */}
           <button
             className="btn btn-primary"
             style={{ width: '100%', background: gradient, border: 'none', padding: '12px 0', fontSize: 13, fontWeight: 700 }}
@@ -213,7 +201,6 @@ function UpgradeModal({
             )}
           </button>
 
-          {/* Trust badges */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
             marginTop: 14, flexWrap: 'wrap',
@@ -235,9 +222,6 @@ function UpgradeModal({
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  CANCEL MODAL                                                             */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function CancelModal({ onClose, onConfirm, loading }: { onClose: () => void; onConfirm: (r: string) => void; loading: boolean }) {
   const [reason, setReason] = useState('');
   return (
@@ -265,9 +249,6 @@ function CancelModal({ onClose, onConfirm, loading }: { onClose: () => void; onC
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  MAIN PAGE                                                                */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 export default function BillingPage() {
   useRazorpay();
   const qc = useQueryClient();
@@ -315,7 +296,6 @@ export default function BillingPage() {
     throwOnError: false,
   });
 
-  /* ── Upgrade mutation ────────────────────────────────────────────────── */
   const upgradeOrder = useMutation({
     mutationFn: (planId: string) => billingApi.upgradeOrder(planId),
     onSuccess: (order, planId) => {
@@ -361,7 +341,6 @@ export default function BillingPage() {
     onError: (e: any) => toast.error(e.response?.data?.message || 'Cancel failed'),
   });
 
-  /** Show confirmation modal, then trigger Razorpay on confirm */
   const handleUpgrade = (planId: string) => {
     const apiPlan = plans?.find(p => p.id === planId);
     const highlights = apiPlan
@@ -392,7 +371,6 @@ export default function BillingPage() {
   return (
     <>
       <div className="page">
-        {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="ph">
           <div className="ph-left">
             <h1>Billing & Plans</h1>
@@ -408,7 +386,6 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* ── Current subscription card ──────────────────────────────────── */}
         {subLoading && (
           <div className="stat-grid" style={{ marginBottom: 24 }}>
             <SkeletonCard /><SkeletonCard /><SkeletonCard />
@@ -455,7 +432,6 @@ export default function BillingPage() {
           </div>
         )}
 
-        {/* ── Quick links ────────────────────────────────────────────────── */}
         <div className="billing-quick">
           {[
             { href: '/billing/credits', icon: Coins, label: 'Webhook Credits', desc: 'Buy prepaid event credits', color: '#a855f7' },
@@ -487,7 +463,6 @@ export default function BillingPage() {
           ))}
         </div>
 
-        {/* ── Plans grid ─────────────────────────────────────────────────── */}
         <div style={{ marginBottom: 16 }}>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.1em' }}>
             // Available Plans
@@ -504,7 +479,6 @@ export default function BillingPage() {
             const isPopular = planId === 'pro';
             const isEnterprise = planId === 'enterprise';
 
-            /* Build features list from API data with -1 → "Unlimited" */
             const highlights: string[] = apiPlan
               ? [
                   fmtLimit(apiPlan.eventsPerMonth, 'events/mo'),
@@ -530,7 +504,6 @@ export default function BillingPage() {
                 transition: 'border-color .2s, box-shadow .2s',
                 overflow: 'hidden',
               }}>
-                {/* Top gradient strip */}
                 <div style={{ height: 3, background: gradient }} />
 
                 {isPopular && (
@@ -555,7 +528,6 @@ export default function BillingPage() {
                 )}
 
                 <div style={{ padding: '22px 22px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  {/* Plan name + icon */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, marginTop: isPopular ? 10 : 0 }}>
                     <div style={{
                       width: 32, height: 32, borderRadius: 9,
@@ -567,7 +539,6 @@ export default function BillingPage() {
                     <div style={{ fontWeight: 800, fontSize: 14, color, textTransform: 'capitalize' }}>{planId}</div>
                   </div>
 
-                  {/* Price */}
                   <div style={{ marginBottom: 16 }}>
                     <span style={{ fontSize: 28, fontWeight: 900, color: 'var(--t1)', letterSpacing: '-1.5px' }}>
                       {priceLabel}
@@ -582,7 +553,6 @@ export default function BillingPage() {
                     )}
                   </div>
 
-                  {/* Feature list */}
                   <div style={{ flex: 1, marginBottom: 18 }}>
                     {highlights.map((f: string) => (
                       <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 7 }}>
@@ -604,7 +574,6 @@ export default function BillingPage() {
                     )}
                   </div>
 
-                  {/* CTA button */}
                   {isEnterprise && !isCurrent ? (
                     <Link href="/billing/credits" style={{ textDecoration: 'none', width: '100%' }}>
                       <button className="btn btn-ghost" style={{ width: '100%', borderColor: `${color}50`, color }}>
@@ -637,7 +606,6 @@ export default function BillingPage() {
           })}
         </div>
 
-        {/* ── Footer trust badges ────────────────────────────────────────── */}
         <div className="billing-foot" style={{
           marginTop: 20, textAlign: 'center',
           fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)',
@@ -652,7 +620,6 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Upgrade Confirmation Modal */}
       <UpgradeModal
         open={upgradeModal.open}
         planId={upgradeModal.planId}

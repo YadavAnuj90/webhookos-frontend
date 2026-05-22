@@ -13,7 +13,6 @@ export default function ProfilePage() {
   const { user, setUser } = useAuth();
   const qc = useQueryClient();
 
-  // Profile form
   const [profile, setProfile] = useState({ firstName: user?.firstName||'', lastName: user?.lastName||'', company: user?.company||'' });
   const updateProfile = useMutation({
     mutationFn: (d:any) => usersApi.updateProfile(d),
@@ -21,7 +20,6 @@ export default function ProfilePage() {
     onError: (e:any) => toast.error(e.response?.data?.message||'Failed'),
   });
 
-  // Password form
   const [pwForm, setPwForm] = useState({ oldPassword:'', newPassword:'', confirm:'' });
   const [showPw, setShowPw] = useState(false);
   const changePw = useMutation({
@@ -36,14 +34,12 @@ export default function ProfilePage() {
     changePw.mutate({ oldPassword: pwForm.oldPassword, newPassword: pwForm.newPassword });
   };
 
-  // Sessions
   const { data: sessions, isLoading: sessionsLoading } = useQuery({ queryKey:['sessions'], queryFn:()=>authApi.getSessions(), enabled:tab==='sessions' });
   const logoutAll = useMutation({
     mutationFn: () => authApi.logoutAll(),
     onSuccess: () => { toast.success('All sessions ended'); qc.invalidateQueries({queryKey:['sessions']}); },
   });
 
-  // API Keys
   const { data: apiKeys, isLoading: keysLoading, refetch: refetchKeys } = useQuery({ queryKey:['apikeys'], queryFn:()=>authApi.listApiKeys(), enabled:tab==='apikeys' });
   const [newKey, setNewKey] = useState<any>(null);
   const [keyForm, setKeyForm] = useState({ name:'', scopes:'read,write' });
@@ -58,7 +54,6 @@ export default function ProfilePage() {
     onSuccess: () => { toast.success('Key revoked'); refetchKeys(); },
   });
 
-  // ── Two-Factor Authentication ─────────────────────────────────────────────
   const { data: twoFaStatus, isLoading: twoFaLoading, refetch: refetchTwoFa } = useQuery({
     queryKey: ['2fa-status'], queryFn: () => authApi.twoFactorStatus(), enabled: tab === 'security',
   });
@@ -106,7 +101,6 @@ export default function ProfilePage() {
       <div className="ph"><div className="ph-left"><h1>Profile</h1><p>// Account settings and security</p></div></div>
 
       <div style={{ display:'grid', gridTemplateColumns:'200px 1fr', gap:20 }}>
-        {/* Sidebar tabs */}
         <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
           {tabs.map(({ id, icon:Icon, label }) => (
             <button key={id} onClick={() => setTab(id)} style={{ display:'flex',alignItems:'center',gap:9,padding:'9px 12px',borderRadius:'var(--r2)',background:tab===id?'var(--abg)':'transparent',border:`1px solid ${tab===id?'var(--abd)':'transparent'}`,color:tab===id?'var(--a3)':'var(--t2)',fontSize:12.5,fontWeight:tab===id?600:400,cursor:'pointer',textAlign:'left',fontFamily:'var(--sans)',transition:'all .13s' }}>
@@ -115,9 +109,7 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {/* Content */}
         <div>
-          {/* Profile Tab */}
           {tab==='profile' && (
             <div className="card">
               <div style={{ fontWeight:700,fontSize:14,marginBottom:18 }}>Personal Information</div>
@@ -143,10 +135,8 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Security Tab */}
           {tab==='security' && (
             <div style={{ display:'flex',flexDirection:'column',gap:16 }}>
-              {/* ── Two-Factor Authentication ─── */}
               <div className="card">
                 <div style={{ display:'flex',alignItems:'center',gap:9,marginBottom:18 }}>
                   <ShieldCheck size={16} style={{ color:'var(--a2)' }}/>
@@ -215,7 +205,6 @@ export default function ProfilePage() {
                   </>
                 )}
 
-                {/* Recovery codes modal */}
                 {showRecovery && recoveryCodes.length > 0 && (
                   <div style={{ marginTop:16,padding:16,background:'var(--card2)',border:'1px solid var(--b2)',borderRadius:'var(--r2)' }}>
                     <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10 }}>
@@ -237,7 +226,6 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* ── Change Password ─── */}
               <div className="card">
                 <div style={{ fontWeight:700,fontSize:14,marginBottom:18 }}>Change Password</div>
                 <form onSubmit={submitPw}>
@@ -261,7 +249,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Sessions Tab */}
           {tab==='sessions' && (
             <div className="card">
               <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18 }}>
@@ -287,7 +274,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* API Keys Tab */}
           {tab==='apikeys' && (
             <div className="card">
               <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18 }}>

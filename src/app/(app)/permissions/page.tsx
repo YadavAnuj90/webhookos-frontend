@@ -9,7 +9,6 @@ import toast from 'react-hot-toast';
 import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 
-/* ─── Dynamic Role Styling ─────────────────────────────────────────────────── */
 const PALETTE = [
   '#ef4444', '#f59e0b', '#818cf8', '#64748b', '#22c55e',
   '#f97316', '#06b6d4', '#ec4899', '#8b5cf6', '#14b8a6',
@@ -18,7 +17,6 @@ const ICONS = [Shield, Lock, Layers, Eye, Users, GitBranch];
 
 type RoleStyle = { color: string; bg: string; icon: any; label: string };
 
-/** Auto-generates visual styling for any role name from API — zero hardcoded roles. */
 function buildRoleStyles(roleNames: string[]): Record<string, RoleStyle> {
   const map: Record<string, RoleStyle> = {};
   roleNames.forEach((rn, i) => {
@@ -40,9 +38,6 @@ function hasPerm(roles: any, role: string, res: string, act: string): boolean {
   return false;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  MATRIX VIEW                                                               */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function MatrixView() {
   const { data: matrix, isLoading } = useQuery({
     queryKey: ['perm-matrix'],
@@ -52,7 +47,6 @@ function MatrixView() {
   const [hoveredRole, setHoveredRole] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  // Derive everything from API data
   const resources: string[] = matrix?.resources || [];
   const actions: string[] = matrix?.actions || [];
   const roles = matrix?.roles || {};
@@ -66,7 +60,6 @@ function MatrixView() {
     ? resources.filter(r => r.toLowerCase().includes(search.toLowerCase()))
     : resources;
 
-  // Stats computed from API response
   const roleStats = roleNames.map(rn => {
     let count = 0;
     for (const res of resources) for (const act of actions) if (hasPerm(roles, rn, res, act)) count++;
@@ -91,7 +84,6 @@ function MatrixView() {
 
   return (
     <>
-      {/* ── Role Cards — all derived from API ──────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${roleNames.length}, 1fr)`, gap: 14, marginBottom: 24 }}>
         {roleStats.map(({ role, count, total, pct }) => {
           const rc = RS[role];
@@ -146,7 +138,6 @@ function MatrixView() {
         })}
       </div>
 
-      {/* ── Search Bar + Collapse/Expand Toggle ────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
         <div style={{ position: 'relative', flex: 1, maxWidth: 280 }}>
           <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--t3)', pointerEvents: 'none' }} />
@@ -157,7 +148,6 @@ function MatrixView() {
           />
         </div>
 
-        {/* Collapse / Expand All button */}
         <button
           onClick={toggleAll}
           className="btn btn-ghost btn-sm"
@@ -181,7 +171,6 @@ function MatrixView() {
         </div>
       </div>
 
-      {/* ── Collapsible Matrix ─────────────────────────────────────── */}
       <div className="tbl-wrap">
         <table className="tbl" style={{ width: '100%' }}>
           <thead>
@@ -209,7 +198,6 @@ function MatrixView() {
 
               return (
                 <Fragment key={res}>
-                  {/* ── Resource header row (always visible, clickable) ── */}
                   <tr
                     onClick={() => toggleRes(res)}
                     style={{ cursor: 'pointer', background: isOpen ? 'rgba(91,108,248,.03)' : undefined }}
@@ -245,7 +233,6 @@ function MatrixView() {
                         </div>
                       </div>
                     </td>
-                    {/* Summary: show compact grant badges per role in collapsed state */}
                     <td>
                       {!isOpen && (
                         <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)' }}>
@@ -259,7 +246,6 @@ function MatrixView() {
                       return (
                         <td key={rn} style={{ textAlign: 'center' }}>
                           {!isOpen ? (
-                            /* Collapsed: show count badge */
                             <span style={{
                               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                               minWidth: 28, height: 22, borderRadius: 6, fontSize: 10, fontWeight: 700,
@@ -272,7 +258,6 @@ function MatrixView() {
                               {grantCount}/{actions.length}
                             </span>
                           ) : (
-                            /* Expanded: empty in header row */
                             <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)' }}>
                               {grantCount}/{actions.length}
                             </span>
@@ -282,7 +267,6 @@ function MatrixView() {
                     })}
                   </tr>
 
-                  {/* ── Action rows (only visible when expanded) ── */}
                   {isOpen && actions.map(act => (
                     <tr key={`${res}:${act}`} style={{ background: 'rgba(91,108,248,.015)' }}>
                       <td style={{ borderRight: '1px solid var(--b1)', paddingLeft: 60 }} />
@@ -328,7 +312,6 @@ function MatrixView() {
         </table>
       </div>
 
-      {/* ── Matrix Legend ───────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 16, marginTop: 12, padding: '10px 14px',
         background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r2)',
@@ -360,11 +343,7 @@ function MatrixView() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  COMPARE VIEW — uses /permissions/compare API for server-side diff         */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function CompareView() {
-  // Fetch matrix just to get available role names
   const { data: matrix } = useQuery({ queryKey: ['perm-matrix'], queryFn: () => permissionsApi.getMatrix() });
 
   const roleNames = Object.keys(matrix?.roles || {});
@@ -375,14 +354,12 @@ function CompareView() {
   const r1 = role1 || roleNames[0] || '';
   const r2 = role2 || roleNames[roleNames.length - 1] || '';
 
-  // Call server-side compare API — returns { onlyInRole1[], onlyInRole2[], shared[] }
   const { data: diff, isLoading: diffLoading } = useQuery({
     queryKey: ['perm-compare', r1, r2],
     queryFn: () => permissionsApi.compareRoles(r1, r2),
     enabled: !!r1 && !!r2 && r1 !== r2,
   });
 
-  // Also fetch individual role perms from API for total counts
   const { data: r1Perms } = useQuery({
     queryKey: ['role-perms', r1],
     queryFn: () => permissionsApi.getRolePerms(r1),
@@ -401,7 +378,6 @@ function CompareView() {
   const Icon1 = rc1.icon;
   const Icon2 = rc2.icon;
 
-  // Data from API
   const onlyInRole1: string[] = diff?.onlyInRole1 || [];
   const onlyInRole2: string[] = diff?.onlyInRole2 || [];
   const sharedPerms: string[] = diff?.shared || [];
@@ -411,7 +387,6 @@ function CompareView() {
   const r1Total = Array.isArray(r1Perms) ? r1Perms.length : 0;
   const r2Total = Array.isArray(r2Perms) ? r2Perms.length : 0;
 
-  // Group diffs by resource (parse "resource:action" strings from API)
   const groupedOnly1: Record<string, string[]> = {};
   for (const p of onlyInRole1) {
     const [res, act] = p.includes(':') ? p.split(':') : [p, p];
@@ -425,14 +400,11 @@ function CompareView() {
     groupedOnly2[res].push(act);
   }
 
-  // Merge all diff resources
   const allDiffResources = Array.from(new Set([...Object.keys(groupedOnly1), ...Object.keys(groupedOnly2)])).sort();
 
   return (
     <>
-      {/* ── Role Selector Cards ─────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 48px 1fr', gap: 0, marginBottom: 24, alignItems: 'stretch' }}>
-        {/* Role A */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r3)', overflow: 'hidden', padding: 0 }}>
           <div style={{ height: 3, background: rc1.bg }} />
           <div style={{ padding: '16px 18px' }}>
@@ -458,7 +430,6 @@ function CompareView() {
           </div>
         </div>
 
-        {/* VS */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{
             width: 36, height: 36, borderRadius: '50%', background: 'var(--card2)',
@@ -467,7 +438,6 @@ function CompareView() {
           }}>VS</div>
         </div>
 
-        {/* Role B */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r3)', overflow: 'hidden', padding: 0 }}>
           <div style={{ height: 3, background: rc2.bg }} />
           <div style={{ padding: '16px 18px' }}>
@@ -494,7 +464,6 @@ function CompareView() {
         </div>
       </div>
 
-      {/* Same role warning */}
       {r1 === r2 && (
         <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r3)' }}>
           <div style={{
@@ -512,7 +481,6 @@ function CompareView() {
 
       {r1 !== r2 && diff && (
         <>
-          {/* ── Visual Stats ──────────────────────────────────────── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
             <div className="stat-card" style={{ borderTop: '3px solid var(--green)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -546,7 +514,6 @@ function CompareView() {
             </div>
           </div>
 
-          {/* ── Overlap Bar ──────────────────────────────────────── */}
           <div style={{ padding: '14px 18px', background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r2)', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Permission overlap</span>
@@ -566,7 +533,6 @@ function CompareView() {
             </div>
           </div>
 
-          {/* ── Diff Table ────────────────────────────────────────── */}
           {allDiffResources.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r3)' }}>
               <div style={{
@@ -642,9 +608,6 @@ function CompareView() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  CUSTOM ROLES (fetched from API)                                           */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function CustomRolesView({ onCreateClick }: { onCreateClick: () => void }) {
   const qc = useQueryClient();
   const { data: customRoles, isLoading } = useQuery({
@@ -674,9 +637,7 @@ function CustomRolesView({ onCreateClick }: { onCreateClick: () => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {roles.map(role => {
-        // Color comes from API (custom role's stored color), fallback to accent
         const c = role.color || '#6366f1';
-        // Group permissions by resource — all from API
         const grouped: Record<string, string[]> = {};
         for (const p of role.permissions) {
           const [res, act] = p.includes(':') ? p.split(':') : [p, ''];
@@ -725,15 +686,11 @@ function CustomRolesView({ onCreateClick }: { onCreateClick: () => void }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  CREATE ROLE MODAL (resources & actions from API)                          */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function CreateRoleModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
   const { data: matrix } = useQuery({ queryKey: ['perm-matrix'], queryFn: () => permissionsApi.getMatrix() });
   const [form, setForm] = useState({ name: '', description: '', color: '#6366f1', permissions: [] as string[] });
 
-  // Everything from API
   const resources: string[] = matrix?.resources || [];
   const actions: string[] = matrix?.actions || [];
   const total = resources.length * actions.length;
@@ -811,7 +768,6 @@ function CreateRoleModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          {/* Permission grid — resources & actions from API */}
           <div style={{ border: '1px solid var(--b1)', borderRadius: 'var(--r2)', overflow: 'hidden' }}>
             {resources.map((res, ri) => {
               const perms = actions.map(a => `${res}:${a}`);
@@ -866,9 +822,6 @@ function CreateRoleModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  PAGE                                                                      */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 export default function PermissionsPage() {
   const [tab, setTab] = useState<'matrix' | 'compare' | 'custom'>('matrix');
   const [showCreate, setShowCreate] = useState(false);

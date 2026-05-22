@@ -51,7 +51,6 @@ function InvoiceModal({ invoice, onClose }: { invoice: Invoice; onClose: () => v
             ))}
           </div>
 
-          {/* Line items */}
           <div className="tbl-wrap" style={{ marginBottom: 14 }}>
             <table className="tbl">
               <thead><tr><th>Description</th><th style={{ textAlign: 'right' }}>Qty</th><th style={{ textAlign: 'right' }}>Unit Price</th><th style={{ textAlign: 'right' }}>Total</th></tr></thead>

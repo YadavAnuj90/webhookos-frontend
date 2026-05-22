@@ -10,7 +10,6 @@ const ACTION_COLORS: any = {
   pause: '#f59e0b', resume: '#4ade80', rotate: '#22d3ee', suspend: '#f87171',
 };
 
-// ── Date helpers ─────────────────────────────────────────────────────────────
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -49,7 +48,6 @@ export default function AdminAuditPage() {
     if (!exportFrom || !exportTo) return;
     setExporting(true);
     try {
-      // Attempt blob download via authenticated API call
       const blob = await auditExportApi.exportBlob(exportFrom, exportTo);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -60,7 +58,6 @@ export default function AdminAuditPage() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      // Fallback: open URL directly (browser will handle auth via cookie/header)
       window.open(auditExportApi.getUrl(exportFrom, exportTo), '_blank');
     } finally {
       setExporting(false);
@@ -97,7 +94,6 @@ export default function AdminAuditPage() {
         </div>
       </div>
 
-      {/* ── CSV Export Bar ─────────────────────────────────────────────────── */}
       <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <Calendar size={14} color="var(--text3)" />
         <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', marginRight: 4 }}>Export CSV:</span>
@@ -110,7 +106,6 @@ export default function AdminAuditPage() {
           <input type="date" value={exportTo} onChange={e => setExportTo(e.target.value)} style={S.dateInput} min={exportFrom} max={todayStr()} />
         </div>
         <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', alignItems: 'center' }}>
-          {/* Quick presets */}
           {[['7d', 7], ['30d', 30], ['90d', 90]].map(([label, days]) => (
             <button key={label} onClick={() => { setExportFrom(daysAgoStr(days as number)); setExportTo(todayStr()); }}
               style={{ fontFamily: 'var(--font-mono)', fontSize: 10, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text3)', cursor: 'pointer' }}>

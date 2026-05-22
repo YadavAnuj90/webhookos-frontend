@@ -13,7 +13,6 @@ import { SkeletonTable } from '@/components/ui/Skeleton';
 import AiDebuggerModal from '@/components/ai/AiDebuggerModal';
 import PiiDetectorModal from '@/components/ai/PiiDetectorModal';
 
-// ─── Shared helpers ──────────────────────────────────────────────────────────
 function SectionDivider({ label }: { label: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '18px 0 12px' }}>
@@ -37,7 +36,6 @@ function PemTextarea({ label, value, onChange, placeholder }: { label: string; v
   );
 }
 
-// ─── Ed25519 Public Key reveal ────────────────────────────────────────────────
 function PublicKeyModal({ publicKey, onClose }: { publicKey: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const copy = () => { navigator.clipboard.writeText(publicKey); setCopied(true); toast.success('Public key copied'); setTimeout(() => setCopied(false), 2000); };
@@ -71,56 +69,42 @@ function PublicKeyModal({ publicKey, onClose }: { publicKey: string; onClose: ()
   );
 }
 
-// ─── Create Modal (extended with Groups 7 fields) ────────────────────────────
 function CreateModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
 
-  // Accordion open states
   const [openSections, setOpenSections] = useState<Record<string,boolean>>({});
   const toggleSection = (k: string) => setOpenSections(p => ({ ...p, [k]: !p[k] }));
   const [showPiiDetector, setShowPiiDetector] = useState(false);
 
   const [form, setForm] = useState({
-    // Existing
     name: '', url: '', eventTypes: '', timeoutMs: 30000,
-    // Group 7 new
     signatureScheme: 'hmac-sha256' as 'hmac-sha256' | 'ed25519',
     endpointType:    'http'         as 'http' | 's3' | 'gcs',
     authType:        'none'         as 'none' | 'bearer_token' | 'oauth2' | 'mtls',
     deduplicationWindowSecs: 0,
-    // Bearer
     bearerToken: '',
-    // OAuth2
     oauth2TokenUrl: '', oauth2ClientId: '', oauth2ClientSecret: '', oauth2Scope: '', oauth2Audience: '',
-    // mTLS
     mtlsCert: '', mtlsKey: '', mtlsCaCert: '',
-    // Storage
     storageBucket: '', storageRegion: '', storagePrefix: '',
     storageAccessKeyId: '', storageSecretAccessKey: '',
     storageServiceAccountKey: '',
-    // NEW: Delivery Reliability
     maxRetries: 0,
     retryStrategy: 'exponential' as 'exponential' | 'linear' | 'fixed',
     retryFixedDelaySeconds: 60,
-    // NEW: Batching
     batchingEnabled: false,
     batchWindowSeconds: 5,
     batchMaxSize: 100,
     maxPayloadBytes: 0,
-    // NEW: Privacy
-    piiFieldsInput: '', // current tag input
+    piiFieldsInput: '',
     piiFields: [] as string[],
     allowedIpsInput: '',
     allowedIps: [] as string[],
-    // NEW: Shadow
     shadowUrl: '',
-    // NEW: Canary
     canaryEnabled: false,
     canaryUrl: '',
     canaryPercent: 0,
   });
 
-  // Maintenance windows list
   const [maintenanceWindows, setMaintenanceWindows] = useState<MaintenanceWindow[]>([]);
   const [mwForm, setMwForm] = useState({ dayOfWeek: 0, startHour: 0, endHour: 1 });
 
@@ -175,20 +159,16 @@ function CreateModal({ onClose }: { onClose: () => void }) {
       base.storageConfig = { bucket: form.storageBucket, prefix: form.storagePrefix || undefined, serviceAccountKey: form.storageServiceAccountKey || undefined };
     }
 
-    // NEW: Delivery reliability
     if (form.maxRetries > 0) { base.maxRetries = form.maxRetries; base.retryStrategy = form.retryStrategy; }
     if (form.retryStrategy === 'fixed') base.retryFixedDelaySeconds = form.retryFixedDelaySeconds;
     if (maintenanceWindows.length > 0) base.maintenanceWindows = maintenanceWindows;
 
-    // NEW: Batching
     if (form.batchingEnabled) { base.batchingEnabled = true; base.batchWindowSeconds = form.batchWindowSeconds; base.batchMaxSize = form.batchMaxSize; }
     if (form.maxPayloadBytes > 0) base.maxPayloadBytes = form.maxPayloadBytes;
 
-    // NEW: Privacy
     if (form.piiFields.length > 0) base.piiFields = form.piiFields;
     if (form.allowedIps.length > 0) base.allowedIps = form.allowedIps;
 
-    // NEW: Shadow / canary
     if (form.shadowUrl) base.shadowUrl = form.shadowUrl;
     if (form.canaryEnabled && form.canaryUrl) { base.canaryUrl = form.canaryUrl; base.canaryPercent = form.canaryPercent; }
 
@@ -208,14 +188,12 @@ function CreateModal({ onClose }: { onClose: () => void }) {
 
   const submit = (e: React.FormEvent) => { e.preventDefault(); mut.mutate(buildPayload()); };
 
-  // Scheme toggle pill
   const SchemePill = ({ val, label }: { val: 'hmac-sha256' | 'ed25519'; label: string }) => (
     <button type="button" onClick={() => setForm(p => ({ ...p, signatureScheme: val }))}
       style={{ flex: 1, padding: '7px 0', borderRadius: 7, border: 'none', background: form.signatureScheme === val ? 'var(--bg2)' : 'transparent', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: form.signatureScheme === val ? 700 : 400, color: form.signatureScheme === val ? 'var(--text)' : 'var(--text3)', cursor: 'pointer' }}
     >{label}</button>
   );
 
-  // Show public key reveal if returned
   if (publicKey) return <PublicKeyModal publicKey={publicKey} onClose={onClose} />;
 
   return (
@@ -227,7 +205,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <form onSubmit={submit}>
-          {/* ── Basic ──────────────────────────────────── */}
           <SectionDivider label="Basic Info" />
           <div className="field"><label className="label">Name <span style={{ color: 'var(--red)' }}>*</span></label>
             <input className="input" placeholder="My API Server" value={form.name} onChange={f('name')} required />
@@ -244,10 +221,8 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             <input className="input" type="number" value={form.timeoutMs} onChange={fNum('timeoutMs')} />
           </div>
 
-          {/* ── Delivery ──────────────────────────────── */}
           <SectionDivider label="Delivery Configuration" />
 
-          {/* Endpoint Type */}
           <div className="field">
             <label className="label">Endpoint Type</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
@@ -268,7 +243,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          {/* S3 fields */}
           {form.endpointType === 's3' && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -283,7 +257,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </>
           )}
 
-          {/* GCS fields */}
           {form.endpointType === 'gcs' && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -297,10 +270,8 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </>
           )}
 
-          {/* ── Security ──────────────────────────────── */}
           <SectionDivider label="Security" />
 
-          {/* Signature Scheme */}
           <div className="field">
             <label className="label">Signature Scheme</label>
             <div style={{ display: 'flex', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 9, padding: 3 }}>
@@ -315,13 +286,11 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             )}
           </div>
 
-          {/* Deduplication */}
           <div className="field">
             <label className="label">Deduplication Window <span style={{ fontWeight: 400, color: 'var(--text3)' }}>(seconds · 0 = disabled)</span></label>
             <input className="input" type="number" min={0} placeholder="0" value={form.deduplicationWindowSecs} onChange={fNum('deduplicationWindowSecs')} />
           </div>
 
-          {/* ── Outbound Auth ─────────────────────────── */}
           <SectionDivider label="Outbound Authentication" />
           <div className="field">
             <label className="label">Auth Type</label>
@@ -333,14 +302,12 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </select>
           </div>
 
-          {/* Bearer Token fields */}
           {form.authType === 'bearer_token' && (
             <div className="field"><label className="label">Bearer Token <span style={{ color: 'var(--red)' }}>*</span></label>
               <input className="input" type="password" placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9…" value={form.bearerToken} onChange={f('bearerToken')} required />
             </div>
           )}
 
-          {/* OAuth2 fields */}
           {form.authType === 'oauth2' && (
             <>
               <div className="field"><label className="label">Token URL <span style={{ color: 'var(--red)' }}>*</span></label><input className="input" type="url" placeholder="https://auth.example.com/oauth/token" value={form.oauth2TokenUrl} onChange={f('oauth2TokenUrl')} required /></div>
@@ -355,7 +322,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </>
           )}
 
-          {/* mTLS fields */}
           {form.authType === 'mtls' && (
             <>
               <PemTextarea label="Client Certificate (PEM) *" value={form.mtlsCert} onChange={v => setForm(p => ({ ...p, mtlsCert: v }))} placeholder="-----BEGIN CERTIFICATE-----&#10;…&#10;-----END CERTIFICATE-----" />
@@ -364,7 +330,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </>
           )}
 
-          {/* ── Advanced: Delivery Reliability ────────── */}
           <button type="button" onClick={() => toggleSection('reliability')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 12px', margin: '12px 0 0', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Settings2 size={13} color="var(--accent2)" />Delivery Reliability</span>
@@ -392,7 +357,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
                   <input className="input" type="number" min={1} value={form.retryFixedDelaySeconds} onChange={e => setForm(p => ({ ...p, retryFixedDelaySeconds: +e.target.value }))} />
                 </div>
               )}
-              {/* Maintenance windows */}
               <div style={{ marginTop: 10 }}>
                 <label className="label">Maintenance Windows (UTC) — delivery auto-paused during window</label>
                 {maintenanceWindows.map((w, i) => (
@@ -427,7 +391,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* ── Advanced: Batching & Performance ──────── */}
           <button type="button" onClick={() => toggleSection('batching')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 12px', margin: '6px 0 0', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Layers size={13} color="var(--accent2)" />Batching &amp; Performance</span>
@@ -465,7 +428,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* ── Advanced: Privacy & Security ──────────── */}
           <button type="button" onClick={() => toggleSection('privacy')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 12px', margin: '6px 0 0', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Lock size={13} color="var(--accent2)" />Privacy &amp; Security</span>
@@ -473,7 +435,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
           </button>
           {openSections.privacy && (
             <div style={{ padding: '14px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 9px 9px', marginBottom: 4 }}>
-              {/* PII Fields */}
               <div className="field">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                   <label className="label" style={{ marginBottom: 0 }}>PII Fields to Scrub <span style={{ fontWeight: 400, color: 'var(--text3)' }}>(dot-notation paths)</span></label>
@@ -501,7 +462,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', marginTop: 4, display: 'block' }}>Scrubbed fields replaced with [REDACTED] before delivery and logging</span>
               </div>
-              {/* Allowed IPs */}
               <div className="field" style={{ marginTop: 8 }}>
                 <label className="label">Allowed IP Addresses <span style={{ fontWeight: 400, color: 'var(--text3)' }}>(Allowlist — leave empty to allow all)</span></label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
@@ -523,7 +483,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* ── Advanced: Testing & Staging ───────────── */}
           <button type="button" onClick={() => toggleSection('testing')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 12px', margin: '6px 0 0', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><FlaskConical size={13} color="var(--accent2)" />Testing &amp; Staging</span>
@@ -539,7 +498,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* ── Advanced: A/B Testing ─────────────────── */}
           <button type="button" onClick={() => toggleSection('canary')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 12px', margin: '6px 0 0', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg3)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}><GitBranch size={13} color="var(--accent2)" />A/B Testing &amp; Canary</span>
@@ -577,7 +535,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* ── Submit ────────────────────────────────── */}
           <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
             <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" style={{ flex: 2 }} disabled={mut.isPending}>
@@ -598,7 +555,6 @@ function CreateModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Endpoint Bulk Bar ────────────────────────────────────────────────────────
 function EndpointBulkBar({
   count, onPause, onResume, onDelete, onClear, loading,
 }: { count: number; onPause: () => void; onResume: () => void; onDelete: () => void; onClear: () => void; loading: boolean }) {
@@ -620,7 +576,6 @@ function EndpointBulkBar({
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function EndpointsPage() {
   const { projectId: PID } = useProjectStore();
   const qc = useQueryClient();
@@ -632,7 +587,6 @@ export default function EndpointsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [rotateResult, setRotateResult] = useState<{ secret: string; publicKey?: string } | null>(null);
 
-  // Bulk select state
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
@@ -785,7 +739,6 @@ export default function EndpointsPage() {
         )}
       </div>
 
-      {/* Bulk Bar */}
       {selected.size > 0 && (
         <EndpointBulkBar
           count={selected.size}
@@ -800,7 +753,6 @@ export default function EndpointsPage() {
       {showCreate && <CreateModal onClose={() => setShowCreate(false)} />}
       {showAiDebug && <AiDebuggerModal onClose={() => setShowAiDebug(false)} prefilledEndpointId={aiDebugEndpointId} />}
 
-      {/* Rotate secret result modal (shows publicKey when Ed25519) */}
       {rotateResult && (
         <div className="modal-bg" onClick={() => setRotateResult(null)}>
           <div className="modal" style={{ width: 480 }} onClick={e => e.stopPropagation()}>

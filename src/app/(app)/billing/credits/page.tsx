@@ -17,7 +17,6 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { SkeletonCard, SkeletonTable } from '@/components/ui/Skeleton';
 
-/* ── Razorpay loader ─────────────────────────────────────────────────────── */
 function useRazorpay() {
   useEffect(() => {
     if (typeof window === 'undefined' || (window as any).Razorpay) return;
@@ -28,7 +27,6 @@ function useRazorpay() {
   }, []);
 }
 
-/* ── Helpers ──────────────────────────────────────────────────────────────── */
 function paise(amount: number): string {
   return (amount / 100).toLocaleString('en-IN');
 }
@@ -39,7 +37,6 @@ function fmtCredits(n: number): string {
   return n.toLocaleString();
 }
 
-/* ── Transaction config ───────────────────────────────────────────────────── */
 const TX_CFG: Record<string, { label: string; color: string; bg: string; bd: string; sign: string; icon: any }> = {
   purchase:   { label: 'Purchase',   color: 'var(--green)',  bg: 'var(--gbg)',  bd: 'var(--gbd)',  sign: '+', icon: ArrowUpRight },
   usage:      { label: 'Usage',      color: 'var(--red)',    bg: 'var(--rbg)',  bd: 'var(--rbd)',  sign: '-', icon: ArrowDownRight },
@@ -48,7 +45,6 @@ const TX_CFG: Record<string, { label: string; color: string; bg: string; bd: str
   adjustment: { label: 'Adjustment', color: 'var(--t3)',     bg: 'rgba(148,163,184,.08)', bd: 'var(--b1)', sign: '±', icon: Sliders },
 };
 
-/* ── Tier visual config ───────────────────────────────────────────────────── */
 const TIER_STYLE: { icon: any; color: string; bg: string; gradient: string }[] = [
   { icon: Zap,    color: '#818cf8', bg: 'rgba(129,140,248,.10)', gradient: 'linear-gradient(135deg,#6366f1,#818cf8)' },
   { icon: Rocket, color: '#22d3ee', bg: 'rgba(34,211,238,.10)',  gradient: 'linear-gradient(135deg,#0891b2,#22d3ee)' },
@@ -56,7 +52,6 @@ const TIER_STYLE: { icon: any; color: string; bg: string; gradient: string }[] =
   { icon: Crown,  color: '#c084fc', bg: 'rgba(192,132,252,.10)', gradient: 'linear-gradient(135deg,#7c3aed,#c084fc)' },
 ];
 
-/* ── Enterprise features list ─────────────────────────────────────────────── */
 const ENTERPRISE_FEATURES = [
   'Custom credit volume & pricing',
   'Dedicated account manager',
@@ -66,9 +61,6 @@ const ENTERPRISE_FEATURES = [
   'Invoice-based billing',
 ];
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  CONTACT SALES MODAL                                                      */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function ContactSalesModal({
   open, onClose, packageId, packageName,
 }: {
@@ -100,7 +92,6 @@ function ContactSalesModal({
   return (
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 540, width: '95%' }}>
-        {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '18px 24px', borderBottom: '1px solid var(--b1)',
@@ -122,7 +113,6 @@ function ContactSalesModal({
         </div>
 
         {submitted ? (
-          /* ── Success state ────────────────────────────────────────────────── */
           <div style={{ padding: '48px 24px', textAlign: 'center' }}>
             <div style={{
               width: 56, height: 56, borderRadius: 14, margin: '0 auto 16px',
@@ -140,7 +130,6 @@ function ContactSalesModal({
             <button className="btn btn-primary" onClick={onClose}>Close</button>
           </div>
         ) : (
-          /* ── Form ─────────────────────────────────────────────────────────── */
           <div style={{ padding: '20px 24px 24px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
               <div className="field" style={{ margin: 0 }}>
@@ -222,7 +211,6 @@ function ContactSalesModal({
               />
             </div>
 
-            {/* Submit */}
             <button
               className="btn btn-primary"
               style={{ width: '100%', background: 'linear-gradient(135deg,#7c3aed,#c084fc)', border: 'none' }}
@@ -249,9 +237,6 @@ function ContactSalesModal({
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  MAIN PAGE                                                                */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 export default function CreditsPage() {
   useRazorpay();
   const qc = useQueryClient();
@@ -265,7 +250,6 @@ export default function CreditsPage() {
     open: false, packageId: '', packageName: '',
   });
 
-  /* ── Queries ──────────────────────────────────────────────────────────────── */
   const { data: balance, isLoading: balLoading } = useQuery<CreditsBalance>({
     queryKey: ['credits-balance'],
     queryFn: () => billingApi.getCreditsBalance(),
@@ -290,7 +274,6 @@ export default function CreditsPage() {
     }
   }, [balance]);
 
-  /* ── Mutations ────────────────────────────────────────────────────────────── */
   const purchaseOrder = useMutation({
     mutationFn: (packageId: string) => billingApi.purchaseCreditsOrder(packageId),
     onSuccess: (order, packageId) => {
@@ -342,13 +325,11 @@ export default function CreditsPage() {
     ? Math.round((balance.lifetimeUsed / balance.lifetimePurchased) * 100)
     : 0;
 
-  // Separate regular packages from contact-sales packages
   const regularPkgs = (packages || []).filter(p => !p.contactSales);
   const enterprisePkgs = (packages || []).filter(p => p.contactSales);
 
   return (
     <div className="page">
-      {/* ── Sales Modal ─────────────────────────────────────────────────────── */}
       <ContactSalesModal
         open={salesModal.open}
         onClose={() => setSalesModal({ open: false, packageId: '', packageName: '' })}
@@ -356,7 +337,6 @@ export default function CreditsPage() {
         packageName={salesModal.packageName}
       />
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="ph">
         <div className="ph-left">
           <h1>Webhook Credits</h1>
@@ -367,7 +347,6 @@ export default function CreditsPage() {
         </Link>
       </div>
 
-      {/* ── Balance Stats ───────────────────────────────────────────────────── */}
       <div className="stat-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 20 }}>
         {balLoading
           ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
@@ -406,7 +385,6 @@ export default function CreditsPage() {
         }
       </div>
 
-      {/* ── Auto Top-Up Bar ─────────────────────────────────────────────────── */}
       <div className="card" style={{
         padding: '14px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
       }}>
@@ -469,7 +447,6 @@ export default function CreditsPage() {
         </div>
       )}
 
-      {/* ── Credit Packages ─────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 12 }}>
         <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>
           // Credit Packages
@@ -482,7 +459,6 @@ export default function CreditsPage() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min((packages?.length || 4), 4)}, 1fr)`, gap: 14, marginBottom: 24 }}>
-          {/* ── Regular (purchasable) packages ──────────────────────────── */}
           {regularPkgs.map((pkg, idx) => {
             const tier = TIER_STYLE[idx % TIER_STYLE.length];
             const TierIcon = tier.icon;
@@ -581,9 +557,8 @@ export default function CreditsPage() {
             );
           })}
 
-          {/* ── Enterprise / Contact Sales packages ────────────────────── */}
           {enterprisePkgs.map((pkg) => {
-            const tier = TIER_STYLE[3]; // Crown / purple
+            const tier = TIER_STYLE[3];
             const TierIcon = tier.icon;
 
             return (
@@ -591,10 +566,8 @@ export default function CreditsPage() {
                 padding: 0, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden',
                 border: `1px solid ${tier.color}30`,
               }}>
-                {/* Gradient top strip */}
                 <div style={{ height: 3, background: tier.gradient }} />
 
-                {/* Enterprise badge */}
                 <div style={{
                   position: 'absolute', top: 12, right: 14,
                   background: tier.bg, border: `1px solid ${tier.color}30`,
@@ -605,7 +578,6 @@ export default function CreditsPage() {
                 </div>
 
                 <div style={{ padding: '20px 20px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  {/* Header */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, marginTop: 14 }}>
                     <div style={{
                       width: 34, height: 34, borderRadius: 8,
@@ -617,7 +589,6 @@ export default function CreditsPage() {
                     <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--t1)' }}>{pkg.name}</span>
                   </div>
 
-                  {/* Credits */}
                   <div style={{ marginBottom: 6 }}>
                     <span style={{ fontSize: 28, fontWeight: 900, color: tier.color, letterSpacing: '-1px', lineHeight: 1 }}>
                       {fmtCredits(pkg.credits)}+
@@ -625,12 +596,10 @@ export default function CreditsPage() {
                     <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)', marginLeft: 6 }}>credits</span>
                   </div>
 
-                  {/* Description */}
                   <p style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.55, marginBottom: 12 }}>
                     {pkg.description}
                   </p>
 
-                  {/* Feature list */}
                   <div style={{ flex: 1, marginBottom: 16 }}>
                     {ENTERPRISE_FEATURES.map(f => (
                       <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
@@ -640,7 +609,6 @@ export default function CreditsPage() {
                     ))}
                   </div>
 
-                  {/* Custom pricing label */}
                   <div style={{ marginBottom: 14 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--t1)' }}>Custom Pricing</span>
                     <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--t3)', marginTop: 2 }}>
@@ -648,7 +616,6 @@ export default function CreditsPage() {
                     </div>
                   </div>
 
-                  {/* Contact Sales button */}
                   <button
                     className="btn btn-primary"
                     style={{
@@ -667,7 +634,6 @@ export default function CreditsPage() {
         </div>
       )}
 
-      {/* ── Transaction History ──────────────────────────────────────────────── */}
       <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>
           // Transaction History
@@ -745,7 +711,6 @@ export default function CreditsPage() {
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="pg" style={{ marginTop: 12 }}>
         <div className="pg-info">
           {txSkip > 0 || txs.length >= 20 ? `Showing ${txSkip + 1}–${txSkip + txs.length}` : ''}

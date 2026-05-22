@@ -17,7 +17,6 @@ function safeJson(str: string): object | null {
 }
 function prettyJson(obj: any): string { return JSON.stringify(obj, null, 2); }
 
-// ─── Validate panel ──────────────────────────────────────────────────────────
 function ValidatePanel({ eventTypeId }: { eventTypeId: string }) {
   const { projectId: PID } = useProjectStore();
   const [payload, setPayload] = useState('{\n  \n}');
@@ -57,7 +56,6 @@ function ValidatePanel({ eventTypeId }: { eventTypeId: string }) {
   );
 }
 
-// ─── Contract Test panel ─────────────────────────────────────────────────────
 function ContractTestPanel({ eventTypeName }: { eventTypeName: string }) {
   const { projectId: PID } = useProjectStore();
   const [payload, setPayload] = useState('{\n  \n}');
@@ -131,7 +129,6 @@ function ContractTestPanel({ eventTypeName }: { eventTypeName: string }) {
         </div>
       )}
 
-      {/* cURL snippet */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.06em' }}>cURL Command</span>
@@ -142,7 +139,6 @@ function ContractTestPanel({ eventTypeName }: { eventTypeName: string }) {
         <pre style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,.08)', borderRadius: 9, padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 10, color: '#e6edf3', overflow: 'auto', margin: 0, lineHeight: 1.7 }}>{curlCmd}</pre>
       </div>
 
-      {/* GitHub Actions YAML */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.06em' }}>GitHub Actions Step</span>
@@ -156,7 +152,6 @@ function ContractTestPanel({ eventTypeName }: { eventTypeName: string }) {
   );
 }
 
-// ─── Simulator Modal ─────────────────────────────────────────────────────────
 function SimulatorModal({ eventType, onClose }: { eventType: EventType; onClose: () => void }) {
   const [payload, setPayload] = useState(eventType.samplePayload ? prettyJson(eventType.samplePayload) : '{\n  \n}');
   const [endpointId, setEndpointId] = useState('');
@@ -219,7 +214,6 @@ function SimulatorModal({ eventType, onClose }: { eventType: EventType; onClose:
   );
 }
 
-// ─── Create / Edit Modal ─────────────────────────────────────────────────────
 function EventTypeModal({ editing, onClose }: { editing: EventType | null; onClose: () => void }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
@@ -274,7 +268,6 @@ function EventTypeModal({ editing, onClose }: { editing: EventType | null; onClo
     { id: 'contract', label: 'Contract Test', disabled: !editing },
   ] as const;
 
-  // SLA / TTL preset helpers
   const SLA_PRESETS = [['30s', 30], ['60s', 60], ['5min', 300], ['1hr', 3600]] as [string, number][];
   const TTL_PRESETS = [['1hr', 3600], ['24hr', 86400], ['7 days', 604800], ['30 days', 2592000]] as [string, number][];
 
@@ -306,7 +299,6 @@ function EventTypeModal({ editing, onClose }: { editing: EventType | null; onClo
             <input className="input" placeholder="payments, billing, stripe" value={form.tags} onChange={f('tags')} />
           </div>
 
-          {/* SLA + TTL */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
               <label className="label">SLA — Max Delivery Time (sec · 0 = no SLA)</label>
@@ -334,7 +326,6 @@ function EventTypeModal({ editing, onClose }: { editing: EventType | null; onClo
             </div>
           </div>
 
-          {/* Tab switcher */}
           <div style={{ display: 'flex', gap: 2, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 9, padding: 3, marginBottom: 12 }}>
             {TABS.map(t => (
               <button key={t.id} type="button"
@@ -374,7 +365,6 @@ function EventTypeModal({ editing, onClose }: { editing: EventType | null; onClo
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
 export default function EventTypesPage() {
   const qc = useQueryClient();
   const [modal, setModal] = useState<EventType | null | 'new'>(null);

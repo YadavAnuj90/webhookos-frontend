@@ -114,7 +114,6 @@ export default function EndpointDetailPage() {
 
   return (
     <div className="page">
-      {/* Header */}
       <div style={{ marginBottom: 22 }}>
         <button
           className="btn btn-ghost btn-sm"
@@ -156,7 +155,6 @@ export default function EndpointDetailPage() {
         </div>
       </div>
 
-      {/* Stats Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         <StatCard label="Delivered" value={ep.totalDelivered || 0} color="var(--green)" />
         <StatCard label="Failed" value={ep.totalFailed || 0} color="var(--red)" />
@@ -168,7 +166,6 @@ export default function EndpointDetailPage() {
         <StatCard label="Timeout" value={ep.timeoutMs ? `${ep.timeoutMs}ms` : '30000ms'} color="var(--blue)" />
       </div>
 
-      {/* Tabs */}
       <div style={{ display: 'flex', gap: 2, marginBottom: 18, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
         {([
           { key: 'overview', label: 'Overview', icon: BarChart3 },
@@ -192,7 +189,6 @@ export default function EndpointDetailPage() {
         ))}
       </div>
 
-      {/* Tab: Overview */}
       {tab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div className="card" style={{ padding: '20px 24px' }}>
@@ -256,7 +252,6 @@ export default function EndpointDetailPage() {
         </div>
       )}
 
-      {/* Tab: Events */}
       {tab === 'events' && (
         <div className="tbl-wrap">
           {evLoading ? (
@@ -303,7 +298,6 @@ export default function EndpointDetailPage() {
         </div>
       )}
 
-      {/* Tab: Settings (Edit form) */}
       {tab === 'settings' && (
         <div className="card" style={{ maxWidth: 560, padding: '24px 28px' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 20 }}>Edit Endpoint</div>

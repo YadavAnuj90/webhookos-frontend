@@ -11,7 +11,6 @@ import {
 import { SkeletonText, SkeletonCard } from '@/components/ui/Skeleton';
 import toast from 'react-hot-toast';
 
-// ── Prometheus text format parser ─────────────────────────────────────────────
 interface ParsedMetric {
   name: string;
   help: string;
@@ -83,7 +82,6 @@ function getNumericSum(samples: { value: string }[]): number {
   return samples.reduce((a, s) => a + (parseFloat(s.value) || 0), 0);
 }
 
-// ── Type config ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<string, { color: string; bg: string; icon: any }> = {
   counter:   { color: '#818cf8', bg: 'rgba(129,140,248,.10)', icon: TrendingUp },
   gauge:     { color: '#22d3ee', bg: 'rgba(34,211,238,.10)',  icon: Gauge },
@@ -91,7 +89,6 @@ const TYPE_CONFIG: Record<string, { color: string; bg: string; icon: any }> = {
   summary:   { color: '#c084fc', bg: 'rgba(192,132,252,.10)', icon: Layers },
 };
 
-// ── Stat card icons for known metrics ────────────────────────────────────────
 const METRIC_CARDS: {
   match: string; label: string; icon: any; color: string; bg: string; suffix?: string;
 }[] = [
@@ -103,7 +100,6 @@ const METRIC_CARDS: {
   { match: 'webhook_circuit_breakers_open', label: 'Circuits Open', icon: ShieldAlert,   color: '#f97316', bg: 'rgba(249,115,22,.10)' },
 ];
 
-// ── Copy button component ────────────────────────────────────────────────────
 function CopyButton({ value, size = 12 }: { value: string; size?: number }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -119,7 +115,6 @@ function CopyButton({ value, size = 12 }: { value: string; size?: number }) {
   );
 }
 
-// ── Status pulse ─────────────────────────────────────────────────────────────
 function StatusPulse({ live, loading, error }: { live: boolean; loading: boolean; error: boolean }) {
   const color = error ? 'var(--red)' : loading ? 'var(--yellow)' : 'var(--green)';
   const label = error ? 'UNREACHABLE' : loading ? 'LOADING' : 'LIVE';
@@ -138,7 +133,6 @@ function StatusPulse({ live, loading, error }: { live: boolean; loading: boolean
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
 export default function MetricsPage() {
   const prometheusUrl = metricsApi.getUrl();
 
@@ -166,24 +160,20 @@ export default function MetricsPage() {
 
   useEffect(() => { fetchMetrics(); }, [fetchMetrics]);
 
-  // Auto-refresh every 15s
   useEffect(() => {
     if (!autoRefresh) return;
     const id = setInterval(fetchMetrics, 15000);
     return () => clearInterval(id);
   }, [autoRefresh, fetchMetrics]);
 
-  // Check integrations
   const hasDatadog  = metrics.some(m => m.name.includes('datadog'));
   const hasNewRelic = metrics.some(m => m.name.includes('newrelic') || m.name.includes('new_relic'));
 
-  // Build stat cards from live data
   const statCards = METRIC_CARDS.map(cfg => {
     const m = metrics.find(mt => mt.name === cfg.match);
     return { ...cfg, value: m ? sumSamples(m.samples) : '—', rawValue: m ? getNumericSum(m.samples) : 0 };
   });
 
-  // Filtered metrics
   const filteredMetrics = metrics.filter(m => {
     if (search && !m.name.toLowerCase().includes(search.toLowerCase()) && !m.help.toLowerCase().includes(search.toLowerCase())) return false;
     if (typeFilter && m.type !== typeFilter) return false;
@@ -198,7 +188,6 @@ export default function MetricsPage() {
 
   return (
     <div className="page">
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="ph">
         <div className="ph-left">
           <h1>Metrics & Observability</h1>
@@ -224,7 +213,6 @@ export default function MetricsPage() {
         </div>
       </div>
 
-      {/* ── Stat Cards Grid ─────────────────────────────────────────────────── */}
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)', marginBottom: 20 }}>
         {loading && !metrics.length
           ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
@@ -247,7 +235,6 @@ export default function MetricsPage() {
         }
       </div>
 
-      {/* ── Prometheus Endpoint Card ────────────────────────────────────────── */}
       <div className="card" style={{ padding: 20, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <div style={{
@@ -265,7 +252,6 @@ export default function MetricsPage() {
           <StatusPulse live={metrics.length > 0} loading={loading} error={!!error} />
         </div>
 
-        {/* Scrape URL */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
           background: 'var(--card2)', border: '1px solid var(--b1)', borderRadius: 'var(--r2)',
@@ -285,7 +271,6 @@ export default function MetricsPage() {
           </div>
         )}
 
-        {/* Endpoint info pills */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           {[
             { icon: Box, label: 'Format', val: 'text/plain 0.0.4' },
@@ -306,7 +291,6 @@ export default function MetricsPage() {
         </div>
       </div>
 
-      {/* ── Integration Status ──────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
         {[
           {
@@ -348,7 +332,6 @@ export default function MetricsPage() {
         ))}
       </div>
 
-      {/* ── Grafana Config ──────────────────────────────────────────────────── */}
       <div className="card" style={{ padding: 20, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <div style={{
@@ -384,9 +367,7 @@ export default function MetricsPage() {
         </div>
       </div>
 
-      {/* ── Live Metrics ────────────────────────────────────────────────────── */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {/* Header bar */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px',
           borderBottom: '1px solid var(--b1)',
@@ -396,7 +377,6 @@ export default function MetricsPage() {
             Live Metrics
           </span>
 
-          {/* Type filter pills */}
           {metrics.length > 0 && (
             <div style={{ display: 'flex', gap: 4 }}>
               <button
@@ -425,7 +405,6 @@ export default function MetricsPage() {
             </div>
           )}
 
-          {/* Search */}
           {metrics.length > 0 && (
             <div className="search-box" style={{ width: 180 }}>
               <Search size={12} />
@@ -445,7 +424,6 @@ export default function MetricsPage() {
           </a>
         </div>
 
-        {/* Loading state */}
         {loading && !metrics.length && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: 20 }}>
             {[0,1,2,3,4,5].map(i => (
@@ -458,7 +436,6 @@ export default function MetricsPage() {
           </div>
         )}
 
-        {/* Error state */}
         {error && !metrics.length && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '40px 20px' }}>
             <div style={{
@@ -475,7 +452,6 @@ export default function MetricsPage() {
           </div>
         )}
 
-        {/* Metrics grid */}
         {filteredMetrics.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: 'var(--b1)' }}>
             {filteredMetrics.map(m => {
@@ -522,7 +498,6 @@ export default function MetricsPage() {
           </div>
         )}
 
-        {/* No results from search */}
         {metrics.length > 0 && filteredMetrics.length === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '32px 20px' }}>
             <Search size={20} color="var(--t3)" />
@@ -530,7 +505,6 @@ export default function MetricsPage() {
           </div>
         )}
 
-        {/* Fallback static list when endpoint is unreachable */}
         {!loading && error && metrics.length === 0 && (
           <div style={{ padding: 20, borderTop: '1px solid var(--b1)' }}>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
@@ -570,7 +544,6 @@ export default function MetricsPage() {
           </div>
         )}
 
-        {/* Tip bar */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
           borderTop: '1px solid var(--b1)', background: 'var(--card2)',
