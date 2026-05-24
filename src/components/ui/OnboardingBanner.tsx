@@ -107,13 +107,13 @@ export default function OnboardingBanner() {
         border: '1px solid var(--border)',
         borderRadius: 14,
         overflow: 'hidden',
-        boxShadow: '0 2px 16px rgba(79,70,229,.06)',
+        boxShadow: 'var(--s1)',
       }}
     >
       {/* Header */}
       <div style={{
         padding: '16px 20px',
-        background: 'linear-gradient(135deg, rgba(79,70,229,.08), rgba(139,92,246,.06))',
+        background: 'var(--abg)',
         borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', gap: 12,
       }}>

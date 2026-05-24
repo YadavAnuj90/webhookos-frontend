@@ -112,6 +112,7 @@ function NavItem({ href, icon: Icon, label, collapsed, color }: { href: string; 
   const ac = color || 'var(--accent2)';
   const itemRef = useRef<HTMLDivElement>(null);
   const [glare, setGlare] = useState<{ x: number; y: number } | null>(null);
+  const [hovered, setHovered] = useState(false);
 
   const onMouseMove = (e: React.MouseEvent) => {
     const el = itemRef.current;
@@ -125,35 +126,59 @@ function NavItem({ href, icon: Icon, label, collapsed, color }: { href: string; 
       <div
         ref={itemRef}
         onMouseMove={onMouseMove}
-        onMouseLeave={() => setGlare(null)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => { setGlare(null); setHovered(false); }}
         style={{
           position: 'relative',
           display: 'flex', alignItems: 'center', gap: 9,
           padding: '7px 10px', borderRadius: 8, marginBottom: 1,
-          background: active ? (color ? `${color}18` : 'rgba(99,102,241,0.13)') : 'transparent',
-          color: active ? ac : 'var(--text3)',
+          background: active
+            ? (color ? `${color}18` : 'rgba(99,102,241,0.13)')
+            : hovered ? 'var(--nav-hover-bg, rgba(99,102,241,0.07))' : 'transparent',
+          color: active ? ac : hovered ? 'var(--text)' : 'var(--text3)',
           borderLeft: active ? `2px solid ${ac}` : '2px solid transparent',
-          transition: 'color 0.15s, background 0.15s',
+          transition: 'color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s',
           cursor: 'pointer', overflow: 'hidden',
+          boxShadow: hovered && !active
+            ? '0 0 20px rgba(99,102,241,0.08), inset 0 0 0 1px rgba(99,102,241,0.08)'
+            : 'none',
+          transform: hovered && !active ? 'translateX(2px)' : 'translateX(0)',
         }}
       >
-        {/* Cursor-following light blob */}
-        {glare && (
+        {glare && !active && (
           <span style={{
             position: 'absolute',
-            left: glare.x - 40,
-            top: glare.y - 40,
-            width: 80, height: 80,
+            left: glare.x - 50,
+            top: glare.y - 50,
+            width: 100, height: 100,
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${ac}30 0%, transparent 70%)`,
+            background: `radial-gradient(circle, ${ac}18 0%, transparent 70%)`,
             pointerEvents: 'none',
-            transition: 'opacity 0.1s',
             zIndex: 0,
           }} />
         )}
-        <Icon size={15} style={{ flexShrink: 0, color: active ? ac : 'inherit', position: 'relative', zIndex: 1 }} />
+        {hovered && !active && (
+          <span style={{
+            position: 'absolute', left: 0, top: 0, bottom: 0, width: 2,
+            borderRadius: 2,
+            background: `linear-gradient(180deg, transparent, ${ac}60, transparent)`,
+            pointerEvents: 'none', zIndex: 0,
+          }} />
+        )}
+        <Icon size={15} style={{
+          flexShrink: 0,
+          color: active ? ac : hovered ? ac : 'inherit',
+          position: 'relative', zIndex: 1,
+          filter: hovered && !active ? `drop-shadow(0 0 4px ${ac}50)` : 'none',
+          transition: 'color 0.2s, filter 0.2s',
+        }} />
         {!collapsed && (
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap', position: 'relative', zIndex: 1 }}>
+          <span style={{
+            fontFamily: 'var(--font-body)', fontSize: 13,
+            fontWeight: active ? 600 : hovered ? 500 : 400,
+            whiteSpace: 'nowrap', position: 'relative', zIndex: 1,
+            transition: 'font-weight 0.15s',
+          }}>
             {label}
           </span>
         )}

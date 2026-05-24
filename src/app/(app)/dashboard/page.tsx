@@ -60,7 +60,7 @@ function OnboardingSteps({ hasEndpoints, hasEvents }: { hasEndpoints: boolean; h
     { done: false,        label: 'Set up an alert',            href: '/alerts',    cta: 'Create Alert',    desc: 'Get notified via Slack or email on failures.' },
   ];
   return (
-    <div style={{ marginBottom: 24, background: 'linear-gradient(135deg,rgba(79,70,229,0.06),rgba(124,58,237,0.04))', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 14, padding: 24 }}>
+    <div style={{ marginBottom: 24, background: 'var(--abg)', border: '1px solid var(--abd)', borderRadius: 14, padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
         <Activity size={16} color="var(--accent2)" />
         <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>Get started with WebhookOS</span>
