@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { auditApi, auditExportApi } from '@/lib/api';
 import { Shield, RefreshCw, Filter, ChevronLeft, ChevronRight, User, Download, Calendar } from 'lucide-react';
 import { SkeletonTable } from '@/components/ui/Skeleton';
+import Select from '@/components/ui/Select';
 
 const ACTION_COLORS: any = {
   create: '#4ade80', delete: '#f87171', update: '#fbbf24',
@@ -80,14 +81,40 @@ export default function AdminAuditPage() {
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           <Filter size={13} color="var(--text3)" />
-          <select value={filter.action} onChange={e => { setFilter(f => ({ ...f, action: e.target.value })); setPage(1); }} style={S.select}>
-            <option value="">All Actions</option>
-            {['login','logout','create','update','delete','replay','pause','resume','rotate','suspend','activate'].map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-          <select value={filter.resource} onChange={e => { setFilter(f => ({ ...f, resource: e.target.value })); setPage(1); }} style={S.select}>
-            <option value="">All Resources</option>
-            {['endpoint','event','project','apikey','webhook','user','workspace'].map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
+          <Select
+            value={filter.action}
+            onChange={v => { setFilter(f => ({ ...f, action: v })); setPage(1); }}
+            width={150}
+            options={[
+              { value: '', label: 'All Actions' },
+              { value: 'login', label: 'login', dot: '#60a5fa' },
+              { value: 'logout', label: 'logout', dot: '#94a3b8' },
+              { value: 'create', label: 'create', dot: '#4ade80' },
+              { value: 'update', label: 'update', dot: '#fbbf24' },
+              { value: 'delete', label: 'delete', dot: '#f87171' },
+              { value: 'replay', label: 'replay', dot: '#a78bfa' },
+              { value: 'pause', label: 'pause', dot: '#f59e0b' },
+              { value: 'resume', label: 'resume', dot: '#4ade80' },
+              { value: 'rotate', label: 'rotate', dot: '#22d3ee' },
+              { value: 'suspend', label: 'suspend', dot: '#f87171' },
+              { value: 'activate', label: 'activate', dot: '#4ade80' },
+            ]}
+          />
+          <Select
+            value={filter.resource}
+            onChange={v => { setFilter(f => ({ ...f, resource: v })); setPage(1); }}
+            width={150}
+            options={[
+              { value: '', label: 'All Resources' },
+              { value: 'endpoint', label: 'endpoint' },
+              { value: 'event', label: 'event' },
+              { value: 'project', label: 'project' },
+              { value: 'apikey', label: 'apikey' },
+              { value: 'webhook', label: 'webhook' },
+              { value: 'user', label: 'user' },
+              { value: 'workspace', label: 'workspace' },
+            ]}
+          />
           <button onClick={load} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-body)', fontSize: 12 }}>
             <RefreshCw size={13} />Refresh
           </button>

@@ -12,6 +12,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import EventDrawer from '@/components/ui/EventDrawer';
+import Select from '@/components/ui/Select';
 
 const STATUS_OPTS = ['', 'pending', 'delivered', 'failed', 'dead', 'filtered', 'rate_limited', 'rate_queued', 'scheduled'];
 const PRIORITY_OPTS: Array<{ val: string; label: string }> = [
@@ -239,12 +240,34 @@ export default function EventsPage() {
           <p>// Webhook event log · {data?.total || 0} total</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select className="input" style={{ width: 135 }} value={status} onChange={e => { setStatus(e.target.value); setPage(1); setSelected(new Set()); }}>
-            {STATUS_OPTS.map(s => <option key={s} value={s}>{s || 'All Status'}</option>)}
-          </select>
-          <select className="input" style={{ width: 145 }} value={priority} onChange={e => { setPriority(e.target.value); setPage(1); setSelected(new Set()); }}>
-            {PRIORITY_OPTS.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
-          </select>
+          <Select
+            value={status}
+            onChange={v => { setStatus(v); setPage(1); setSelected(new Set()); }}
+            width={155}
+            options={[
+              { value: '', label: 'All Status' },
+              { value: 'pending', label: 'Pending', dot: '#eab308' },
+              { value: 'delivered', label: 'Delivered', dot: '#22c55e' },
+              { value: 'failed', label: 'Failed', dot: '#f43f5e' },
+              { value: 'dead', label: 'Dead', dot: '#6b7280' },
+              { value: 'filtered', label: 'Filtered', dot: '#8b5cf6' },
+              { value: 'rate_limited', label: 'Rate Limited', dot: '#f97316' },
+              { value: 'rate_queued', label: 'Rate Queued', dot: '#38bdf8' },
+              { value: 'scheduled', label: 'Scheduled', dot: '#818cf8' },
+            ]}
+          />
+          <Select
+            value={priority}
+            onChange={v => { setPriority(v); setPage(1); setSelected(new Set()); }}
+            width={160}
+            options={[
+              { value: '', label: 'All Priorities' },
+              { value: 'p0', label: 'P0 Critical', dot: '#ef4444' },
+              { value: 'p1', label: 'P1 High', dot: '#f97316' },
+              { value: 'p2', label: 'P2 Normal', dot: '#eab308' },
+              { value: 'p3', label: 'P3 Low', dot: '#22c55e' },
+            ]}
+          />
           <button className="btn btn-ghost" onClick={() => qc.invalidateQueries({ queryKey: ['events'] })} title="Refresh">
             <RefreshCw size={12} />
           </button>

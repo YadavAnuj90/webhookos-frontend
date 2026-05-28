@@ -58,7 +58,7 @@ function SecretModal({ secret, onClose }: { secret: string; onClose: () => void 
   );
 }
 
-function OpWebhookModal({ editing, onClose }: { editing: OperationalWebhook | null; onClose: () => void }) {
+function OpWebhookModal({ editing, onClose, pid }: { editing: OperationalWebhook | null; onClose: () => void; pid: string }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
     url:         editing?.url         || '',
@@ -87,12 +87,12 @@ function OpWebhookModal({ editing, onClose }: { editing: OperationalWebhook | nu
   });
 
   const create = useMutation({
-    mutationFn: (d: any) => operationalWebhooksApi.create(PID, d),
+    mutationFn: (d: any) => operationalWebhooksApi.create(pid, d),
     onSuccess: () => { toast.success('Operational webhook created'); qc.invalidateQueries({ queryKey: ['op-webhooks'] }); onClose(); },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Create failed'),
   });
   const update = useMutation({
-    mutationFn: (d: any) => operationalWebhooksApi.update(PID, editing!._id, d),
+    mutationFn: (d: any) => operationalWebhooksApi.update(pid, editing!._id, d),
     onSuccess: () => { toast.success('Updated'); qc.invalidateQueries({ queryKey: ['op-webhooks'] }); onClose(); },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Update failed'),
   });
@@ -290,6 +290,7 @@ export default function OperationalWebhooksPage() {
         <OpWebhookModal
           editing={modal === 'new' ? null : modal}
           onClose={() => setModal(null)}
+          pid={PID}
         />
       )}
       {secretModal && <SecretModal secret={secretModal} onClose={() => setSecretModal(null)} />}

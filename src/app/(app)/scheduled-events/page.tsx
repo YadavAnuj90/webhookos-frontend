@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { format, formatDistanceToNow } from 'date-fns';
 import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
+import Select from '@/components/ui/Select';
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
   pending:   { bg: 'rgba(250,204,21,.12)',  color: '#facc15', label: 'Pending' },
@@ -150,10 +151,15 @@ export default function ScheduledEventsPage() {
       </div>
 
       <div style={{ display:'flex',alignItems:'center',gap:8,marginBottom:16 }}>
-        <select className="input" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} style={{ width:160,fontSize:12 }}>
-          <option value="">All Statuses</option>
-          {Object.entries(STATUS_COLORS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
+        <Select
+          value={statusFilter}
+          onChange={v => { setStatusFilter(v); setPage(1); }}
+          width={170}
+          options={[
+            { value: '', label: 'All Statuses' },
+            ...Object.entries(STATUS_COLORS).map(([k, v]) => ({ value: k, label: v.label, dot: v.color })),
+          ]}
+        />
         <div style={{ flex:1 }}/>
         <div style={{ fontFamily:'var(--mono)',fontSize:9,color:'var(--t3)' }}>{total} event{total !== 1 ? 's' : ''}</div>
         <button className="btn btn-ghost btn-sm" onClick={() => qc.invalidateQueries({ queryKey: ['scheduled-events'] })}><RefreshCw size={11}/>Refresh</button>

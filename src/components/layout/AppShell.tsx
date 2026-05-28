@@ -364,9 +364,36 @@ function Topbar({ toggleMobile, onOpenCmd }: { toggleMobile: () => void; onOpenC
     document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h);
   }, []);
   const handleLogout = async () => { try { await logout(); } catch {} router.push('/auth/login'); };
+
+  const iconBtnStyle: React.CSSProperties = {
+    cursor: 'pointer', padding: 7, borderRadius: 8,
+    background: 'transparent', border: '1px solid transparent',
+    color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'all .18s ease', position: 'relative',
+  };
+  const iconBtnHover = (e: React.MouseEvent, active = false) => {
+    const el = e.currentTarget as HTMLElement;
+    el.style.background = 'var(--abg)';
+    el.style.borderColor = 'var(--abd)';
+    el.style.color = 'var(--accent2)';
+    el.style.transform = 'scale(1.05)';
+  };
+  const iconBtnLeave = (e: React.MouseEvent, active = false) => {
+    const el = e.currentTarget as HTMLElement;
+    el.style.background = active ? 'var(--abg)' : 'transparent';
+    el.style.borderColor = active ? 'var(--abd)' : 'transparent';
+    el.style.color = active ? 'var(--accent2)' : 'var(--text3)';
+    el.style.transform = 'scale(1)';
+  };
+
   return (
-    <header style={{ height: 54, background: 'var(--bg2)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, flexShrink: 0 }}>
-      {/* Mobile hamburger */}
+    <header style={{
+      height: 52, background: 'var(--bg2)',
+      borderBottom: '1px solid var(--border)',
+      display: 'flex', alignItems: 'center', padding: '0 16px 0 20px',
+      gap: 8, flexShrink: 0,
+      backdropFilter: 'blur(16px)',
+    }}>
       <button
         onClick={toggleMobile}
         style={{ display: 'none', padding: 6, borderRadius: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text3)', alignItems: 'center' }}
@@ -375,125 +402,268 @@ function Topbar({ toggleMobile, onOpenCmd }: { toggleMobile: () => void; onOpenC
         <Menu size={18} />
       </button>
 
-      <div style={{ flex: 1, maxWidth: 400 }}>
+      {/* Search — centered feel */}
+      <div style={{ flex: 1, maxWidth: 420 }}>
         <button
           onClick={onOpenCmd}
-          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 9, padding: '6px 12px', cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent2)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px rgba(79,70,229,0.13)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+            background: 'var(--bg3)', border: '1px solid var(--b1)',
+            borderRadius: 10, padding: '7px 14px',
+            cursor: 'pointer', transition: 'all .2s ease',
+          }}
+          onMouseEnter={e => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.borderColor = 'var(--abd)';
+            el.style.boxShadow = '0 0 0 3px var(--abg)';
+            el.style.background = 'var(--bg2)';
+          }}
+          onMouseLeave={e => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.borderColor = 'var(--b1)';
+            el.style.boxShadow = 'none';
+            el.style.background = 'var(--bg3)';
+          }}
         >
-          <Search size={13} color="var(--text3)" style={{ flexShrink: 0 }} />
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)', flex: 1, textAlign: 'left' }}>Search pages, endpoints, events...</span>
-          <kbd style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap', opacity: 0.7 }}>⌘K</kbd>
+          <Search size={14} color="var(--text3)" style={{ flexShrink: 0, opacity: 0.6 }} />
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)', flex: 1, textAlign: 'left', opacity: 0.7 }}>
+            Search pages, endpoints, events...
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <kbd style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)',
+              background: 'var(--bg)', border: '1px solid var(--b1)',
+              borderRadius: 5, padding: '2px 6px', lineHeight: 1.3,
+              boxShadow: '0 1px 0 var(--b1)',
+            }}>⌘</kbd>
+            <kbd style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text3)',
+              background: 'var(--bg)', border: '1px solid var(--b1)',
+              borderRadius: 5, padding: '2px 6px', lineHeight: 1.3,
+              boxShadow: '0 1px 0 var(--b1)',
+            }}>K</kbd>
+          </div>
         </button>
       </div>
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+
+      {/* Right actions */}
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          style={{ cursor: 'pointer', padding: 8, borderRadius: 8, background: 'transparent', border: 'none', color: 'var(--text3)', display: 'flex', alignItems: 'center', transition: 'color .2s, background .2s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'; (e.currentTarget as HTMLElement).style.color = 'var(--accent2)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--text3)'; }}
+          style={iconBtnStyle}
+          onMouseEnter={iconBtnHover}
+          onMouseLeave={e => iconBtnLeave(e)}
         >
           {theme === 'dark'
             ? <Sun size={16} strokeWidth={1.8} />
             : <Moon size={16} strokeWidth={1.8} />}
         </button>
+
+        {/* Notifications */}
         <div ref={notifRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setShowNotifs(!showNotifs)}
-            style={{ cursor: 'pointer', padding: 8, borderRadius: 8, background: showNotifs ? 'var(--bg3)' : 'transparent', border: 'none', color: 'var(--text3)', display: 'flex', alignItems: 'center', position: 'relative', transition: 'background 0.15s' }}
+            style={{ ...iconBtnStyle, background: showNotifs ? 'var(--abg)' : 'transparent', borderColor: showNotifs ? 'var(--abd)' : 'transparent', color: showNotifs ? 'var(--accent2)' : 'var(--text3)' }}
+            onMouseEnter={iconBtnHover}
+            onMouseLeave={e => iconBtnLeave(e, showNotifs)}
           >
             <Bell size={16} />
             {unread > 0 && (
-              <span style={{ position: 'absolute', top: 4, right: 4, minWidth: 14, height: 14, borderRadius: 7, background: '#f87171', border: '1.5px solid var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#fff', fontWeight: 800, lineHeight: 1 }}>{unread > 9 ? '9+' : unread}</span>
+              <span style={{
+                position: 'absolute', top: 2, right: 2,
+                minWidth: 16, height: 16, borderRadius: 8,
+                background: 'linear-gradient(135deg,#ef4444,#f87171)',
+                border: '2px solid var(--bg2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 2px 6px rgba(239,68,68,0.4)',
+              }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#fff', fontWeight: 800, lineHeight: 1 }}>
+                  {unread > 9 ? '9+' : unread}
+                </span>
               </span>
             )}
           </button>
           {showNotifs && (
-            <div style={{ position: 'absolute', right: 0, top: '100%', width: 340, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 14, boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 200, marginTop: 8, overflow: 'hidden' }}>
-              {/* Header */}
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{
+              position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 360,
+              background: 'var(--bg2)', border: '1px solid var(--border)',
+              borderRadius: 14, boxShadow: 'var(--s2), 0 16px 48px rgba(0,0,0,0.25)',
+              zIndex: 200, overflow: 'hidden',
+              animation: 'selectSlideIn 0.15s ease',
+            }}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Notifications</span>
-                  {unread > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, padding: '1px 7px', borderRadius: 20, background: '#f871711a', color: '#f87171', border: '1px solid #f8717130' }}>{unread} unread</span>}
+                  {unread > 0 && (
+                    <span style={{
+                      fontFamily: 'var(--font-mono)', fontSize: 9, padding: '2px 8px',
+                      borderRadius: 20, background: 'var(--rbg)', color: 'var(--red)',
+                      border: '1px solid var(--rbd)', fontWeight: 600,
+                    }}>{unread} new</span>
+                  )}
                 </div>
-                {allNotifs.length > 0 && <button onClick={clearAll} style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent2)', background: 'none', border: 'none', cursor: 'pointer' }}>Clear all</button>}
+                {allNotifs.length > 0 && (
+                  <button onClick={clearAll} style={{
+                    fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent2)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '3px 8px', borderRadius: 6, transition: 'background .15s',
+                  }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--abg)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+                  >Clear all</button>
+                )}
               </div>
-
-              {/* Notification list */}
-              <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+              <div style={{ maxHeight: 380, overflowY: 'auto' }}>
                 {allNotifs.length === 0 ? (
-                  <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-                    <Bell size={24} style={{ color: 'var(--text3)', opacity: 0.3, marginBottom: 8 }} />
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text3)' }}>You're all caught up!</div>
+                  <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--bg3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                      <Bell size={18} style={{ color: 'var(--text3)', opacity: 0.4 }} />
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text3)', fontWeight: 500 }}>All clear</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--t3)', marginTop: 3, opacity: 0.6 }}>No new notifications</div>
                   </div>
                 ) : allNotifs.map((n) => (
                   <div
                     key={n.id}
                     onClick={() => { if (n.href) { router.push(n.href); setShowNotifs(false); } }}
                     style={{
-                      padding: '11px 16px', borderBottom: '1px solid var(--border)',
+                      padding: '12px 16px', borderBottom: '1px solid var(--b1)',
                       display: 'flex', gap: 10, alignItems: 'flex-start',
-                      background: n.read ? 'transparent' : 'rgba(99,102,241,0.04)',
+                      background: n.read ? 'transparent' : 'var(--abg)',
                       cursor: n.href ? 'pointer' : 'default',
-                      transition: 'background 0.15s',
+                      transition: 'background 0.12s',
                     }}
-                    onMouseEnter={e => { if (n.href) (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.08)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = n.read ? 'transparent' : 'rgba(99,102,241,0.04)'; }}
+                    onMouseEnter={e => { if (n.href) (e.currentTarget as HTMLElement).style.background = 'var(--bg3)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = n.read ? 'transparent' : 'var(--abg)'; }}
                   >
-                    <div style={{ marginTop: 1, flexShrink: 0 }}><NotifIcon type={n.type} /></div>
+                    <div style={{
+                      marginTop: 2, flexShrink: 0, width: 28, height: 28, borderRadius: 8,
+                      background: n.type === 'alert' ? 'var(--rbg)' : n.type === 'dlq' ? 'var(--ybg)' : n.type === 'billing' ? 'var(--gbg)' : 'var(--abg)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <NotifIcon type={n.type} />
+                    </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text)', fontWeight: n.read ? 400 : 600 }}>{n.title}</span>
                         {!n.read && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent2)', flexShrink: 0 }} />}
                       </div>
-                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text2)', marginTop: 2, lineHeight: 1.45 }}>{n.body}</div>
-                      {n.time && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginTop: 4 }}>{n.time}</div>}
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text2)', marginTop: 2, lineHeight: 1.5 }}>{n.body}</div>
+                      {n.time && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text3)', marginTop: 4, opacity: 0.7 }}>{n.time}</div>}
                     </div>
-                    {n.href && <ChevronRight size={12} color="var(--text3)" style={{ marginTop: 2, flexShrink: 0 }} />}
+                    {n.href && <ChevronRight size={12} color="var(--text3)" style={{ marginTop: 8, flexShrink: 0, opacity: 0.5 }} />}
                   </div>
                 ))}
               </div>
-
-              {/* Footer */}
-              <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
-                <Link href="/alerts" onClick={() => setShowNotifs(false)} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent2)', textDecoration: 'none' }}>
+              <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
+                <Link href="/alerts" onClick={() => setShowNotifs(false)} style={{
+                  fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent2)',
+                  textDecoration: 'none', fontWeight: 500,
+                  padding: '3px 10px', borderRadius: 6, transition: 'background .15s',
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--abg)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
                   Manage alert rules →
                 </Link>
               </div>
             </div>
           )}
         </div>
-        <div ref={userRef} style={{ position: 'relative', marginLeft: 4 }}>
-          <button onClick={() => setShowUser(!showUser)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', borderRadius: 9 }}>
-            <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#4f46e5,#818cf8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: '#fff' }}>{((user?.firstName || user?.email || 'U')[0].toUpperCase()) || 'U'}</span></div>
+
+        {/* Separator */}
+        <div style={{ width: 1, height: 20, background: 'var(--b1)', margin: '0 6px', flexShrink: 0 }} />
+
+        {/* User Avatar */}
+        <div ref={userRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowUser(!showUser)}
+            style={{
+              background: 'none', border: '1px solid transparent', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '4px 6px 4px 4px', borderRadius: 10,
+              transition: 'all .18s ease',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = 'var(--bg3)';
+              el.style.borderColor = 'var(--b1)';
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = showUser ? 'var(--bg3)' : 'none';
+              el.style.borderColor = showUser ? 'var(--b1)' : 'transparent';
+            }}
+          >
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: 'linear-gradient(135deg,#4f46e5,#818cf8)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(79,70,229,0.3)',
+            }}>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, color: '#fff' }}>
+                {((user?.firstName || user?.email || 'U')[0].toUpperCase()) || 'U'}
+              </span>
+            </div>
             <ChevronDown size={11} color="var(--text3)" style={{ transform: showUser ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
           </button>
           {showUser && (
-            <div style={{ position: 'absolute', right: 0, top: '100%', width: 220, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200, marginTop: 6, overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{(user?.firstName ? user.firstName + ' ' + (user.lastName || '') : user?.email) || 'User'}</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{user?.email}</div>
+            <div style={{
+              position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 240,
+              background: 'var(--bg2)', border: '1px solid var(--border)',
+              borderRadius: 12, boxShadow: 'var(--s2), 0 12px 40px rgba(0,0,0,0.25)',
+              zIndex: 200, overflow: 'hidden',
+              animation: 'selectSlideIn 0.15s ease',
+            }}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                  {(user?.firstName ? user.firstName + ' ' + (user.lastName || '') : user?.email) || 'User'}
+                </div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{user?.email}</div>
                 {sub && (
-                  <div style={{ marginTop: 7 }}>
+                  <div style={{ marginTop: 8 }}>
                     <PlanBadge status={sub.status} planName={sub.planName} daysLeft={sub.daysLeft} />
                   </div>
                 )}
               </div>
-              {[{ icon: User, label: 'Profile', href: '/profile' }, { icon: Settings, label: 'Settings', href: '/settings' }, { icon: Building2, label: 'Workspace', href: '/workspace' }].map(({ icon: Icon, label, href }) => (
-                <Link key={href} href={href} onClick={() => setShowUser(false)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', color: 'var(--text2)' }}>
-                  <Icon size={13} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12 }}>{label}</span>
+              <div style={{ padding: '4px' }}>
+                {[{ icon: User, label: 'Profile', href: '/profile' }, { icon: Settings, label: 'Settings', href: '/settings' }, { icon: Building2, label: 'Workspace', href: '/workspace' }].map(({ icon: Icon, label, href }) => (
+                  <Link key={href} href={href} onClick={() => setShowUser(false)} style={{
+                    textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 12px', borderRadius: 8, color: 'var(--text2)',
+                    transition: 'all .12s',
+                  }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg3)'; el.style.color = 'var(--text)'; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = 'var(--text2)'; }}
+                  >
+                    <Icon size={14} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, fontWeight: 500 }}>{label}</span>
+                  </Link>
+                ))}
+                <Link href="/billing" onClick={() => setShowUser(false)} style={{
+                  textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 12px', borderRadius: 8, color: '#4ade80',
+                  transition: 'all .12s',
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(74,222,128,0.06)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  <CreditCard size={14} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, fontWeight: 600 }}>Manage Billing</span>
                 </Link>
-              ))}
-              <Link href="/billing" onClick={() => setShowUser(false)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', color: '#4ade80' }}>
-                <CreditCard size={13} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600 }}>Manage Billing</span>
-              </Link>
-              <div style={{ borderTop: '1px solid var(--border)' }}>
-                <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', background: 'none', border: 'none', cursor: 'pointer', color: '#f87171' }}>
-                  <LogOut size={13} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12 }}>Sign Out</span>
+              </div>
+              <div style={{ borderTop: '1px solid var(--border)', padding: 4 }}>
+                <button onClick={handleLogout} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 12px', borderRadius: 8,
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#f87171',
+                  transition: 'background .12s',
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.06)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  <LogOut size={14} /><span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, fontWeight: 500 }}>Sign Out</span>
                 </button>
               </div>
             </div>

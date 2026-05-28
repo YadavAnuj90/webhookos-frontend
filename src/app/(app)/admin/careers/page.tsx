@@ -9,6 +9,7 @@ import {
   AlertTriangle, Archive, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { careersApi } from '@/lib/api';
+import Select from '@/components/ui/Select';
 
 const DEPT_OPTIONS = [
   { value: 'engineering', label: 'Engineering' },
@@ -179,14 +180,31 @@ export default function AdminCareersPage() {
       {tab === 'applications' && (
         <>
           <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-            <select value={appFilters.jobId} onChange={e => setAppFilters(f => ({ ...f, jobId: e.target.value, page: 1 }))} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--b2)', background: 'var(--card)', color: 'var(--t1)', fontSize: 12, fontFamily: 'inherit' }}>
-              <option value="">All Jobs</option>
-              {jobs.map((j: any) => <option key={j._id} value={j._id}>{j.title}</option>)}
-            </select>
-            <select value={appFilters.status} onChange={e => setAppFilters(f => ({ ...f, status: e.target.value, page: 1 }))} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--b2)', background: 'var(--card)', color: 'var(--t1)', fontSize: 12, fontFamily: 'inherit' }}>
-              <option value="">All Statuses</option>
-              {APP_STATUSES.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-            </select>
+            <Select
+              value={appFilters.jobId}
+              onChange={v => setAppFilters(f => ({ ...f, jobId: v, page: 1 }))}
+              width={200}
+              options={[
+                { value: '', label: 'All Jobs' },
+                ...jobs.map((j: any) => ({ value: j._id, label: j.title })),
+              ]}
+            />
+            <Select
+              value={appFilters.status}
+              onChange={v => setAppFilters(f => ({ ...f, status: v, page: 1 }))}
+              width={160}
+              options={[
+                { value: '', label: 'All Statuses' },
+                { value: 'new', label: 'new', dot: '#3b82f6' },
+                { value: 'reviewed', label: 'reviewed', dot: '#eab308' },
+                { value: 'shortlisted', label: 'shortlisted', dot: '#8b5cf6' },
+                { value: 'interview', label: 'interview', dot: '#a855f7' },
+                { value: 'offered', label: 'offered', dot: '#22c55e' },
+                { value: 'hired', label: 'hired', dot: '#4ade80' },
+                { value: 'rejected', label: 'rejected', dot: '#ef4444' },
+                { value: 'withdrawn', label: 'withdrawn', dot: '#94a3b8' },
+              ]}
+            />
           </div>
 
           <div style={{ background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r3)', overflow: 'hidden' }}>

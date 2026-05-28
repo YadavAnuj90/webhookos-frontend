@@ -12,6 +12,7 @@ import Empty from '@/components/ui/Empty';
 import { SkeletonTable } from '@/components/ui/Skeleton';
 import AiDebuggerModal from '@/components/ai/AiDebuggerModal';
 import PiiDetectorModal from '@/components/ai/PiiDetectorModal';
+import Select from '@/components/ui/Select';
 
 function SectionDivider({ label }: { label: string }) {
   return (
@@ -633,12 +634,17 @@ export default function EndpointsPage() {
       <div className="ph">
         <div className="ph-left"><h1>Endpoints</h1><p>// Webhook delivery targets · {data?.total || 0} total</p></div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <select className="input" style={{ width: 130 }} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setSelected(new Set()); }}>
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="disabled">Disabled</option>
-          </select>
+          <Select
+            value={statusFilter}
+            onChange={v => { setStatusFilter(v); setSelected(new Set()); }}
+            width={150}
+            options={[
+              { value: '', label: 'All Status' },
+              { value: 'active', label: 'Active', dot: '#22c55e' },
+              { value: 'paused', label: 'Paused', dot: '#eab308' },
+              { value: 'disabled', label: 'Disabled', dot: '#f43f5e' },
+            ]}
+          />
           <button
             className="btn"
             onClick={() => { setAiDebugEndpointId(undefined); setShowAiDebug(true); }}
